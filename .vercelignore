@@ -1,0 +1,8 @@
+node_modules
+.pgdata
+*.log
+server/.env
+.env
+.shots
+project
+chats

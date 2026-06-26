@@ -1,35 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initSchema } from './db.js';
-import { authRouter, googleConfigured } from './auth.js';
-import { dataRouter } from './data.js';
+import app, { googleConfigured } from './app.js';
 
+// Local development + traditional (single-service) hosting entry point.
+// On Vercel this file is NOT used — the app is served via api/ + static CDN.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const app = express();
 const PORT = Number(process.env.PORT || 3001);
-const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 const isProd = process.env.NODE_ENV === 'production';
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(
-  cors({
-    origin: isProd ? true : APP_URL,
-    credentials: true,
-  })
-);
-
-app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, google: googleConfigured })
-);
-app.use('/api/auth', authRouter);
-app.use('/api', dataRouter);
-
-// In production, serve the built PWA and let the SPA handle routing.
 if (isProd) {
   const webDist = path.resolve(__dirname, '../../web/dist');
   app.use(express.static(webDist));
