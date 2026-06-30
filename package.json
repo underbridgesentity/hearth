@@ -13,9 +13,17 @@
     "dev:web": "npm run dev --workspace web",
     "build": "npm run build --workspace web && npm run build --workspace server",
     "start": "npm run start --workspace server",
-    "db:setup": "npm run db:setup --workspace server"
+    "db:setup": "npm run db:setup --workspace server",
+    "cap:sync": "npm run build && npx cap sync ios",
+    "cap:add:ios": "npx cap add ios",
+    "cap:open:ios": "npx cap open ios"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.1",
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.1"
   }
 }

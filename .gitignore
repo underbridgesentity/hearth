@@ -10,3 +10,11 @@ web/dist/
 dev.db
 .shots/
 .vercel
+
+# Capacitor / iOS native build artifacts (generated on a Mac via `npx cap add ios`)
+ios/App/Pods/
+ios/App/App/public/
+ios/App/build/
+ios/DerivedData/
+*.xcuserstate
+.gradle/

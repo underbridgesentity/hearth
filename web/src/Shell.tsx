@@ -89,7 +89,7 @@ export default function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       </div>
 
       {/* Scroll area */}
-      <div className="croft-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '4px 18px 120px' }}>
+      <div className="croft-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '4px 18px calc(120px + env(safe-area-inset-bottom))' }}>
         <div className="croft-fade" key={tab}>
           {tab === 'home' && <Home nav={nav} />}
           {tab === 'calendar' && <Calendar nav={nav} />}
@@ -100,12 +100,12 @@ export default function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       </div>
 
       {/* FAB */}
-      <button onClick={nav.openAdd} style={{ position: 'absolute', right: 18, bottom: 92, width: 56, height: 56, borderRadius: 18, border: 'none', background: '#3B5BFF', boxShadow: '0 10px 24px rgba(59,91,255,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30 }}>
+      <button onClick={nav.openAdd} style={{ position: 'absolute', right: 18, bottom: 'calc(92px + env(safe-area-inset-bottom))', width: 56, height: 56, borderRadius: 18, border: 'none', background: '#3B5BFF', boxShadow: '0 10px 24px rgba(59,91,255,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30 }}>
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" /></svg>
       </button>
 
       {/* Tab bar */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 25, padding: '12px 10px 16px', background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', borderTop: '1px solid #EAEEF6', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 25, padding: '12px 10px max(16px, env(safe-area-inset-bottom))', background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', borderTop: '1px solid #EAEEF6', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
         <TabBtn active={tab === 'home'} onClick={() => nav.goTab('home')} label="Home">
           <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" fill="none" />
         </TabBtn>
@@ -126,7 +126,7 @@ export default function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       {/* Sheets */}
       {sheet && (
         <div onClick={nav.closeSheet} className="scrim-in" style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(16,20,38,0.45)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={(e) => e.stopPropagation()} className="sheet-up croft-scroll" style={{ background: '#F3F5FB', borderRadius: '28px 28px 0 0', padding: '10px 18px 30px', maxHeight: '86%', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)' }}>
+          <div onClick={(e) => e.stopPropagation()} className="sheet-up croft-scroll" style={{ background: '#F3F5FB', borderRadius: '28px 28px 0 0', padding: '10px 18px calc(30px + env(safe-area-inset-bottom))', maxHeight: '86%', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)' }}>
             <div style={{ width: 40, height: 5, borderRadius: 100, background: '#D3DAE8', margin: '4px auto 16px' }} />
             {sheet === 'add' && <AddSheet nav={nav} />}
             {sheet === 'notifs' && <NotifSheet />}

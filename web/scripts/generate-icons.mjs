@@ -42,6 +42,32 @@ function render(N) {
   return buf;
 }
 
+// Maskable variant: the same house, but drawn at ~58% scale centered on a full
+// blue tile, so Android/iOS adaptive masks crop only background, never the glyph.
+function renderMaskable(N) {
+  const buf = Buffer.alloc(N * N * 4);
+  const f = 0.58;                 // house occupies 58% of the tile (safe zone)
+  const inset = ((1 - f) / 2) * N;
+  const span = f * N;
+  const s = span / 24;
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      let c = BLUE;
+      const hx = x - inset, hy = y - inset;
+      if (hx >= 0 && hy >= 0 && hx < span && hy < span) {
+        const u = hx / s, v = hy / s;
+        const roof = tri(u, v, 12, 3.2, 2.6, 11.6, 21.4, 11.6);
+        const body = u >= 5 && u <= 19 && v >= 11.2 && v <= 20.4;
+        const door = u >= 10 && u <= 14 && v >= 14.6 && v <= 20.6;
+        if ((roof || body) && !door) c = WHITE;
+      }
+      const i = (y * N + x) * 4;
+      buf[i] = c[0]; buf[i + 1] = c[1]; buf[i + 2] = c[2]; buf[i + 3] = 255;
+    }
+  }
+  return buf;
+}
+
 // ---- minimal PNG encoder ----
 const CRC = (() => {
   const t = new Uint32Array(256);
@@ -85,6 +111,13 @@ for (const N of [192, 512, 180]) {
   const png = encodePng(N, render(N));
   const file = N === 180 ? path.resolve(__dirname, '../public/apple-touch-icon.png') : path.join(outDir, `icon-${N}.png`);
   writeFileSync(file, png);
+  console.log('wrote', file);
+}
+
+// Padded maskable icons (Android adaptive + iOS App Store safe zone).
+for (const N of [192, 512]) {
+  const file = path.join(outDir, `icon-maskable-${N}.png`);
+  writeFileSync(file, encodePng(N, renderMaskable(N)));
   console.log('wrote', file);
 }
 
