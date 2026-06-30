@@ -91,7 +91,7 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
         const perm = await Notification.requestPermission();
         if (perm === 'granted') {
           await run(api.setSetting('push', true));
-          new Notification('Hearth', { body: "You're all set — we'll keep the family in sync." });
+          new Notification('Croft', { body: "You're all set — we'll keep the family in sync." });
         }
       }
     } catch {
@@ -183,7 +183,7 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
         <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', padding: '56px 26px 36px' }}>
           <BackBtn onClick={() => setStep('welcome')} />
           <h1 style={titleStyle}>Welcome back</h1>
-          <p style={subStyle}>Log in to your Hearth home.</p>
+          <p style={subStyle}>Log in to your Croft home.</p>
           <Field label="Email"><input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></Field>
           <Field label="Password"><input style={inputStyle} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" /></Field>
           {err && <ErrLine msg={err} />}
@@ -257,7 +257,7 @@ const oauthBtn: React.CSSProperties = { width: '100%', padding: 14, borderRadius
 
 function Scroll({ children }: { children: React.ReactNode }) {
   return (
-    <div className="hearth-scroll" style={{ position: 'absolute', inset: 0, zIndex: 100, background: '#F3F5FB', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+    <div className="croft-scroll" style={{ position: 'absolute', inset: 0, zIndex: 100, background: '#F3F5FB', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
       {children}
     </div>
   );
@@ -268,7 +268,7 @@ function Wordmark() {
       <span style={{ width: 34, height: 34, borderRadius: 11, background: '#3B5BFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(59,91,255,0.32)' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3.5 11L12 4l8.5 7v8.2a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1z" stroke="#fff" strokeWidth="2" strokeLinejoin="round" /><path d="M9.5 20.5v-6h5v6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </span>
-      <span style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 22, letterSpacing: '-0.01em' }}>Hearth</span>
+      <span style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 22, letterSpacing: '-0.01em' }}>Croft</span>
     </div>
   );
 }

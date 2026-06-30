@@ -5,9 +5,9 @@ const { Pool } = pg;
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error(
-    '\n[hearth] DATABASE_URL is not set.\n' +
+    '\n[croft] DATABASE_URL is not set.\n' +
       'Set it to your Neon connection string (Production) or a local Postgres URL (Dev).\n' +
-      'Example: postgresql://user:pass@ep-xxx.neon.tech/hearth?sslmode=require\n'
+      'Example: postgresql://user:pass@ep-xxx.neon.tech/croft?sslmode=require\n'
   );
   process.exit(1);
 }

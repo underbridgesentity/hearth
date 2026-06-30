@@ -1,6 +1,6 @@
-// HearthArt.jsx — original line-art spot-illustrations for Hearth onboarding.
+// CroftArt.jsx — original line-art spot-illustrations for Croft onboarding.
 // Style matches the supplied set: black outline, white fill, a single blue accent.
-// Mount: <x-import component="Art" from="./HearthArt.jsx" name="organize" width="248" hint-size="248px,207px"></x-import>
+// Mount: <x-import component="Art" from="./CroftArt.jsx" name="organize" width="248" hint-size="248px,207px"></x-import>
 
 const INK = '#15181F', BLUE = '#3B5BFF', LBLUE = '#E4EAFF', SOFT = '#EDF1FA', WHITE = '#FFFFFF', GREY = '#C9CFE0';
 

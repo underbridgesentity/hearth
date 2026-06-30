@@ -72,7 +72,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
 
       {/* notifications & reminders */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 4px' }}>Notifications & reminders</div>
-      <div style={{ fontSize: 12.5, color: '#717A90', margin: '0 2px 12px' }}>How Hearth reaches you and the family</div>
+      <div style={{ fontSize: 12.5, color: '#717A90', margin: '0 2px 12px' }}>How Croft reaches you and the family</div>
       <div style={{ background: '#fff', borderRadius: 22, padding: '4px 16px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 26 }}>
         {notifRows.map((r) => (
           <SettingRow key={r.key} illo={r.illo} iconColor={(r as any).iconColor} label={r.label} detail={r.detail} good={r.good} onClick={() => toggle(r.key, 'Updated ✓')} />

@@ -6,7 +6,7 @@ import { query, tx } from './db.js';
 import { seedHousehold } from './seed.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-insecure-secret-change-me';
-const COOKIE = 'hearth_token';
+const COOKIE = 'croft_token';
 const isProd = process.env.NODE_ENV === 'production';
 
 export interface AuthedRequest extends Request {

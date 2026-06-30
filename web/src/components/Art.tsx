@@ -1,4 +1,4 @@
-// Original line-art spot-illustrations for Hearth.
+// Original line-art spot-illustrations for Croft.
 // Style: black outline, white fill, a single blue accent.
 import type { JSX } from 'react';
 

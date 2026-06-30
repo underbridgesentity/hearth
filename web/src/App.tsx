@@ -95,7 +95,7 @@ function Logo() {
         </svg>
       </span>
       <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, letterSpacing: '-0.01em' }}>
-        Hearth
+        Croft
       </span>
     </div>
   );

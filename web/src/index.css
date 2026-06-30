@@ -25,15 +25,15 @@ button {
   font-family: inherit;
 }
 /* hide scrollbars on app scroll areas */
-.hearth-scroll::-webkit-scrollbar {
+.croft-scroll::-webkit-scrollbar {
   display: none;
 }
-.hearth-scroll {
+.croft-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 /* gentle entry fade for screens */
-@keyframes hearthFade {
+@keyframes croftFade {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -43,8 +43,8 @@ button {
     transform: translateY(0);
   }
 }
-.hearth-fade {
-  animation: hearthFade 0.26s ease both;
+.croft-fade {
+  animation: croftFade 0.26s ease both;
 }
 @keyframes sheetUp {
   from {

@@ -23,12 +23,12 @@ if (isProd) {
 async function main() {
   await initSchema();
   app.listen(PORT, () => {
-    console.log(`[hearth] API listening on http://localhost:${PORT}`);
-    console.log(`[hearth] Google sign-in: ${googleConfigured ? 'configured' : 'not configured (email works)'}`);
+    console.log(`[croft] API listening on http://localhost:${PORT}`);
+    console.log(`[croft] Google sign-in: ${googleConfigured ? 'configured' : 'not configured (email works)'}`);
   });
 }
 
 main().catch((e) => {
-  console.error('[hearth] failed to start', e);
+  console.error('[croft] failed to start', e);
   process.exit(1);
 });

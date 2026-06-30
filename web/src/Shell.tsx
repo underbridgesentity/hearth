@@ -89,8 +89,8 @@ export default function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       </div>
 
       {/* Scroll area */}
-      <div className="hearth-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '4px 18px 120px' }}>
-        <div className="hearth-fade" key={tab}>
+      <div className="croft-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '4px 18px 120px' }}>
+        <div className="croft-fade" key={tab}>
           {tab === 'home' && <Home nav={nav} />}
           {tab === 'calendar' && <Calendar nav={nav} />}
           {tab === 'tasks' && <Plans nav={nav} />}
@@ -126,7 +126,7 @@ export default function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       {/* Sheets */}
       {sheet && (
         <div onClick={nav.closeSheet} className="scrim-in" style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(16,20,38,0.45)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={(e) => e.stopPropagation()} className="sheet-up hearth-scroll" style={{ background: '#F3F5FB', borderRadius: '28px 28px 0 0', padding: '10px 18px 30px', maxHeight: '86%', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)' }}>
+          <div onClick={(e) => e.stopPropagation()} className="sheet-up croft-scroll" style={{ background: '#F3F5FB', borderRadius: '28px 28px 0 0', padding: '10px 18px 30px', maxHeight: '86%', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)' }}>
             <div style={{ width: 40, height: 5, borderRadius: 100, background: '#D3DAE8', margin: '4px auto 16px' }} />
             {sheet === 'add' && <AddSheet nav={nav} />}
             {sheet === 'notifs' && <NotifSheet />}

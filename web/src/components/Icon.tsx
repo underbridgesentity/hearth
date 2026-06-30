@@ -1,4 +1,4 @@
-// Duotone illustration-style icon set for Hearth.
+// Duotone illustration-style icon set for Croft.
 // A soft tinted tile with a rounded-stroke glyph in `color`.
 import type { JSX } from 'react';
 

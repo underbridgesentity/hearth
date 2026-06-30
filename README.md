@@ -1,8 +1,8 @@
-# Hearth — Family Hub 🏡
+# Croft — Family Hub 🏡
 
 > One calm home for your whole family — shared dates, reminders, lists, goals and money, off your group chats.
 
-Hearth is a **mobile-first web app (PWA)** with a real **Node API + Postgres (Neon)** backend. It implements the Hearth design end-to-end: account creation (email + Google), a seeded family household, and fully working Calendar, Plans (to-dos / lists / goals), Money, and Family screens — all persisted to the database and synced across reloads/devices.
+Croft is a **mobile-first web app (PWA)** with a real **Node API + Postgres (Neon)** backend. It implements the Croft design end-to-end: account creation (email + Google), a seeded family household, and fully working Calendar, Plans (to-dos / lists / goals), Money, and Family screens — all persisted to the database and synced across reloads/devices.
 
 This was implemented from the Claude Design handoff bundle (the original prototype lives in [`project/`](project/)).
 
@@ -64,7 +64,7 @@ Open **http://localhost:5173** and create an account.
 1. Create a project at [neon.tech](https://neon.tech) and copy the connection string.
 2. Put it in `server/.env`:
    ```
-   DATABASE_URL=postgresql://user:pass@ep-xxxx.region.aws.neon.tech/hearth?sslmode=require
+   DATABASE_URL=postgresql://user:pass@ep-xxxx.region.aws.neon.tech/croft?sslmode=require
    ```
    SSL is enabled automatically when the host is `neon.tech` (or `sslmode=require` is present).
 3. `npm run db:setup` then `npm run dev`.
@@ -104,7 +104,7 @@ NODE_ENV=production
 
 ## Installing on a phone (PWA)
 
-- **iPhone / iPad:** open the site in Safari → Share → **Add to Home Screen**. It launches full-screen with the Hearth icon (no browser chrome).
+- **iPhone / iPad:** open the site in Safari → Share → **Add to Home Screen**. It launches full-screen with the Croft icon (no browser chrome).
 - **Android:** Chrome shows an **Install app** prompt, or use the ⋮ menu → **Install app**.
 
 ### Path to the App Store / Google Play
@@ -137,5 +137,6 @@ project/             Original Claude Design prototype (reference)
 
 ## Honest notes
 
-- **Apple/Google Calendar sync, email reminders, and iPhone Reminders** are presented as real, toggleable settings, but the outbound integrations themselves are not yet wired to external services — that's the next backend milestone. Everything else performs real reads/writes.
+- **Calendar linking is live** — Croft publishes a subscribable **ICS feed** (`/api/calendar/:token.ics`) that any calendar app can follow, plus per-event **Add to Calendar** with reminders. Two-way Google Calendar write (events created in Croft pushed into Google, and vice-versa) is the next calendar milestone.
+- **Email reminders (Resend)** are presented as a real, toggleable setting, but the outbound email integration itself is not yet wired — that's a queued backend milestone. Everything else performs real reads/writes.
 - The seeded "Mokoena-style" family/bills/dates are sample content on each new household so the app feels alive; all of it is editable and deletable.

@@ -1,5 +1,5 @@
-// HearthIcon.jsx — duotone illustration-style icon set for Hearth.
-// Mount via: <x-import component="Icon" from="./HearthIcon.jsx" name="cart" color="#3B5BFF" hint-size="44px,44px"></x-import>
+// CroftIcon.jsx — duotone illustration-style icon set for Croft.
+// Mount via: <x-import component="Icon" from="./CroftIcon.jsx" name="cart" color="#3B5BFF" hint-size="44px,44px"></x-import>
 // Renders a soft tinted tile with a rounded-stroke glyph in `color`.
 
 function hexA(hex, a) {

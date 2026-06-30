@@ -2,7 +2,7 @@ import type { PoolClient } from 'pg';
 
 /**
  * Seed a brand-new household with warm starter content so every screen is
- * populated from the first launch (mirrors the Hearth design). The signing-up
+ * populated from the first launch (mirrors the Croft design). The signing-up
  * user becomes the "You" member; the rest is editable sample family data.
  */
 export async function seedHousehold(

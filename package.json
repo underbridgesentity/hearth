@@ -1,8 +1,8 @@
 {
-  "name": "hearth",
+  "name": "croft",
   "version": "1.0.0",
   "private": true,
-  "description": "Hearth — one calm home for your whole family. Mobile PWA + Node/Neon backend.",
+  "description": "Croft — one calm home for your whole family. Mobile PWA + Node/Neon backend.",
   "workspaces": [
     "server",
     "web"

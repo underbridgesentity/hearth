@@ -1,4 +1,4 @@
-// Generate Hearth PWA icons (blue tile + white house) as PNGs with zero deps.
+// Generate Croft PWA icons (blue tile + white house) as PNGs with zero deps.
 import zlib from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

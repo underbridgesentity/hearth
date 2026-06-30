@@ -24,7 +24,7 @@ export function AddSheet({ nav }: { nav: Nav }) {
   ];
   return (
     <div>
-      <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 22, margin: '0 2px 4px' }}>Add to Hearth</div>
+      <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 22, margin: '0 2px 4px' }}>Add to Croft</div>
       <div style={{ fontSize: 13, color: '#717A90', margin: '0 2px 16px' }}>What would you like to add?</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {options.map((o) => (
