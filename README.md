@@ -137,6 +137,5 @@ project/             Original Claude Design prototype (reference)
 
 ## Honest notes
 
-- **Calendar linking is live** — Croft publishes a subscribable **ICS feed** (`/api/calendar/:token.ics`) that any calendar app can follow, plus per-event **Add to Calendar** with reminders. Two-way Google Calendar write (events created in Croft pushed into Google, and vice-versa) is the next calendar milestone.
-- **Email reminders (Resend)** are presented as a real, toggleable setting, but the outbound email integration itself is not yet wired — that's a queued backend milestone. Everything else performs real reads/writes.
+- **The Calendar screen is in-app only.** Events are real (created/stored/displayed from Postgres), but there is **no external calendar integration yet** — no subscribable ICS feed, no Apple/Google Calendar sync, no per-event "Add to Calendar". Those, plus **email reminders (Resend)** and the Apple/Google Calendar toggles shown in Family settings, are presented as real, toggleable settings but the outbound integrations are **not yet wired**. They are queued backend milestones. Everything else performs real reads/writes.
 - The seeded "Mokoena-style" family/bills/dates are sample content on each new household so the app feels alive; all of it is editable and deletable.

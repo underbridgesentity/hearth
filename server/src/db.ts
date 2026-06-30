@@ -4,12 +4,14 @@ const { Pool } = pg;
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-  console.error(
-    '\n[croft] DATABASE_URL is not set.\n' +
-      'Set it to your Neon connection string (Production) or a local Postgres URL (Dev).\n' +
-      'Example: postgresql://user:pass@ep-xxx.neon.tech/croft?sslmode=require\n'
+  // Throw rather than process.exit(1): in the serverless runtime exit() kills the
+  // whole function instance (an opaque FUNCTION_INVOCATION_FAILED), whereas a throw
+  // is catchable by the entry handler and surfaces as a clean, loggable 500.
+  throw new Error(
+    '[croft] DATABASE_URL is not set. Set it to your Neon connection string ' +
+      '(Production) or a local Postgres URL (Dev), e.g. ' +
+      'postgresql://user:pass@ep-xxx.neon.tech/croft?sslmode=require'
   );
-  process.exit(1);
 }
 
 // Neon requires SSL; local dev usually does not. Detect by host.
