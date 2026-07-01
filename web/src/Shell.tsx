@@ -141,6 +141,7 @@ export default function Shell({ onSignedOut }: { onSignedOut: () => void }) {
               maxWidth: isDesktop ? 460 : 'none',
               maxHeight: isDesktop ? '84vh' : '86%',
               overflowY: 'auto',
+              overflowX: 'hidden',
               boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
             }}
           >

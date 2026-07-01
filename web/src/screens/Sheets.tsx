@@ -108,8 +108,8 @@ export function FormSheet({ form, fd, setFd, nav }: { form: FormType; fd: FormDa
         <div>
           <Field label="Title"><input style={inp} value={fd.title || ''} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Swimming lesson" /></Field>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}><Lbl>Date</Lbl><input style={inp} type="date" value={fd.date || ''} onChange={(e) => set('date', e.target.value)} /></div>
-            <div style={{ flex: 1 }}><Lbl>Time</Lbl><input style={inp} type="time" value={fd.time || ''} onChange={(e) => set('time', e.target.value)} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Date</Lbl><input style={inp} type="date" value={fd.date || ''} onChange={(e) => set('date', e.target.value)} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Time</Lbl><input style={inp} type="time" value={fd.time || ''} onChange={(e) => set('time', e.target.value)} /></div>
           </div>
           <Lbl>Who's it for</Lbl>
           <Chips items={state.members.map((m) => ({ id: m.id, label: m.name, color: m.color }))} value={fd.who} onPick={(id) => set('who', id)} />
@@ -120,8 +120,8 @@ export function FormSheet({ form, fd, setFd, nav }: { form: FormType; fd: FormDa
         <div>
           <Field label="Bill name"><input style={inp} value={fd.name || ''} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Water & lights" /></Field>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}><Lbl>Amount (R)</Lbl><input style={inp} type="number" value={fd.amount || ''} onChange={(e) => set('amount', e.target.value)} placeholder="0" /></div>
-            <div style={{ flex: 1 }}><Lbl>Due date</Lbl><input style={inp} type="date" value={fd.due || ''} onChange={(e) => set('due', e.target.value)} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Amount (R)</Lbl><input style={inp} type="number" value={fd.amount || ''} onChange={(e) => set('amount', e.target.value)} placeholder="0" /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Due date</Lbl><input style={inp} type="date" value={fd.due || ''} onChange={(e) => set('due', e.target.value)} /></div>
           </div>
           <Lbl>Paid by</Lbl>
           <Chips items={state.members.map((m) => ({ id: m.id, label: m.name, color: m.color }))} value={fd.payer} onPick={(id) => set('payer', id)} />
@@ -149,7 +149,7 @@ export function FormSheet({ form, fd, setFd, nav }: { form: FormType; fd: FormDa
   );
 }
 
-const inp: React.CSSProperties = { width: '100%', padding: '14px 16px', borderRadius: 14, border: '1.5px solid #E8E3DB', background: '#fff', fontSize: 15, color: '#181922', outline: 'none' };
+const inp: React.CSSProperties = { width: '100%', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 14, border: '1.5px solid #E8E3DB', background: '#fff', fontSize: 15, color: '#181922', outline: 'none', WebkitAppearance: 'none', appearance: 'none' };
 function Lbl({ children }: { children: React.ReactNode }) {
   return <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#6F6C67', marginBottom: 8 }}>{children}</label>;
 }
