@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { query, tx } from './db.js';
 import { seedHousehold } from './seed.js';
 import { rateLimit } from './rateLimit.js';
+import { sendEmail, emailLayout } from './mailer.js';
 import type { PoolClient } from 'pg';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-insecure-secret-change-me';
@@ -264,6 +265,85 @@ authRouter.post('/invite/:token/accept', rateLimit('signup', 10, 3600), async (r
   });
   setAuthCookie(res, userId);
   res.json({ user: await loadUser(userId) });
+});
+
+// ---- Password reset (email) ----
+authRouter.post('/forgot', rateLimit('forgot', 10, 900), async (req, res) => {
+  const email = String(req.body?.email || '').toLowerCase().trim();
+  // Always respond ok — never reveal whether an account exists.
+  if (email) {
+    const u = (await query(`SELECT id, name, password_hash FROM users WHERE email=$1`, [email])).rows[0];
+    if (u && u.password_hash) {
+      const token = crypto.randomBytes(32).toString('base64url');
+      await query(
+        `INSERT INTO password_resets (token, user_id, expires_at) VALUES ($1,$2, now() + interval '1 hour')`,
+        [token, u.id]
+      );
+      const link = `${APP_URL}/reset/${token}`;
+      await sendEmail({
+        to: email,
+        subject: 'Reset your Croft password',
+        html: emailLayout(
+          'Reset your password',
+          `Hi ${u.name || 'there'},<br><br>We got a request to reset your Croft password. This link expires in 1 hour. If you didn’t ask for this, you can safely ignore this email.`,
+          { label: 'Reset password', url: link }
+        ),
+        text: `Reset your Croft password: ${link} (expires in 1 hour)`,
+      });
+    }
+  }
+  res.json({ ok: true });
+});
+
+const resetSchema = z.object({ token: z.string().min(10), password: z.string().min(8).max(200) });
+authRouter.post('/reset', rateLimit('forgot', 10, 900), async (req, res) => {
+  const parsed = resetSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Enter a new password (at least 8 characters).' });
+  const r = (await query(`SELECT user_id, expires_at, used FROM password_resets WHERE token=$1`, [parsed.data.token])).rows[0];
+  if (!r || r.used || new Date(r.expires_at).getTime() < Date.now()) {
+    return res.status(410).json({ error: 'This reset link is invalid or has expired.' });
+  }
+  const hash = await bcrypt.hash(parsed.data.password, 10);
+  await tx(async (c) => {
+    await c.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [hash, r.user_id]);
+    await c.query(`UPDATE password_resets SET used=true WHERE token=$1`, [parsed.data.token]);
+  });
+  setAuthCookie(res, r.user_id);
+  res.json({ user: await loadUser(r.user_id) });
+});
+
+// ---- Account management (authenticated) ----
+const changePwSchema = z.object({ currentPassword: z.string().optional(), newPassword: z.string().min(8).max(200) });
+authRouter.post('/change-password', requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = changePwSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'New password must be at least 8 characters.' });
+  const u = (await query(`SELECT password_hash FROM users WHERE id=$1`, [req.userId])).rows[0];
+  // Password accounts must confirm the current password; Google-only accounts
+  // (no hash yet) are allowed to set one.
+  if (u?.password_hash) {
+    const ok = parsed.data.currentPassword && (await bcrypt.compare(parsed.data.currentPassword, u.password_hash));
+    if (!ok) return res.status(401).json({ error: 'Your current password is incorrect.' });
+  }
+  const hash = await bcrypt.hash(parsed.data.newPassword, 10);
+  await query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [hash, req.userId]);
+  res.json({ ok: true });
+});
+
+authRouter.post('/delete-account', requireAuth, async (req: AuthedRequest, res) => {
+  const householdId = req.householdId!;
+  await tx(async (c) => {
+    // Remove this user's membership (by link and by their member_id).
+    await c.query(`DELETE FROM members WHERE household_id=$1 AND user_id=$2`, [householdId, req.userId]);
+    if (req.memberId) await c.query(`DELETE FROM members WHERE id=$1`, [req.memberId]);
+    const remaining = Number(
+      (await c.query(`SELECT COUNT(*) FROM members WHERE household_id=$1`, [householdId])).rows[0].count
+    );
+    await c.query(`DELETE FROM users WHERE id=$1`, [req.userId]);
+    // Last one out → delete the household and all its data.
+    if (remaining === 0) await c.query(`DELETE FROM households WHERE id=$1`, [householdId]);
+  });
+  res.clearCookie(COOKIE);
+  res.json({ ok: true });
 });
 
 // ---- Google OAuth (real when env is configured) ----

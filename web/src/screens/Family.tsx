@@ -7,15 +7,48 @@ import Icon from '../components/Icon';
 import { Avatar, YouBadge } from './Onboarding';
 
 const grotesk = "'Space Grotesk', sans-serif";
+const pwInput: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1.5px solid #E4E9F2', background: '#fff', borderRadius: 12, padding: '12px 14px', fontSize: 14.5, outline: 'none', fontFamily: 'inherit', color: '#101426' };
 
 export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: () => void }) {
-  const { state, run, flash } = useStore();
+  const { state, run, flash, deleteAccount } = useStore();
   const [inviting, setInviting] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [linkBusy, setLinkBusy] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
   if (!state) return null;
   const s: Settings = state.household.settings || {};
+
+  const changePassword = async () => {
+    if (newPw.length < 8) return flash('New password must be at least 8 characters');
+    setPwBusy(true);
+    try {
+      await api.changePassword({ currentPassword: curPw || undefined, newPassword: newPw });
+      flash('Password updated ✓');
+      setPwOpen(false);
+      setCurPw('');
+      setNewPw('');
+    } catch (e: any) {
+      flash(e?.message || 'Could not update password');
+    } finally {
+      setPwBusy(false);
+    }
+  };
+  const doDelete = async () => {
+    setDelBusy(true);
+    try {
+      await deleteAccount();
+      // store clears user/state → app returns to sign-in automatically
+    } catch (e: any) {
+      flash(e?.message || 'Could not delete account');
+      setDelBusy(false);
+    }
+  };
 
   const invite = () => {
     const v = inviteName.trim();
@@ -130,15 +163,42 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
 
       {/* account & security */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 12px' }}>Account & security</div>
-      <div style={{ background: '#fff', borderRadius: 22, padding: '4px 16px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 18 }}>
-        <SettingRow illo="lock" label="Face ID & passcode" detail={onOff('faceId')} good={!!s.faceId} onClick={() => toggle('faceId', 'Updated ✓')} />
-        <SettingRow illo="family" label="Family unit & logins" detail={`${state.members.length} members`} onClick={() => flash('Manage logins — coming soon')} />
-        <SettingRow illo="shield" label="Privacy & permissions" detail="" onClick={() => flash('Privacy settings — coming soon')} />
+      <div style={{ background: '#fff', borderRadius: 22, padding: '4px 16px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 12 }}>
+        <SettingRow illo="lock" label="Change password" detail="" onClick={() => setPwOpen((v) => !v)} />
         <SettingRow illo="cloud" label="Backup & sync" detail={onOff('backup')} good={!!s.backup} onClick={() => toggle('backup', 'Updated ✓')} />
+        <SettingRow illo="shield" label="Face ID & passcode" detail={onOff('faceId')} good={!!s.faceId} onClick={() => toggle('faceId', 'Updated ✓')} />
         <div style={{ height: 4 }} />
       </div>
 
+      {pwOpen && (
+        <div style={{ background: '#fff', borderRadius: 18, padding: 16, boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 12 }}>Change password</div>
+          <input type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} placeholder="Current password (blank if you use Google)" style={pwInput} />
+          <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password (8+ characters)" style={{ ...pwInput, marginTop: 8 }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={changePassword} disabled={pwBusy} style={{ flex: 1, border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 14, padding: 11, borderRadius: 12, cursor: 'pointer', opacity: pwBusy ? 0.6 : 1 }}>{pwBusy ? 'Saving…' : 'Save'}</button>
+            <button onClick={() => { setPwOpen(false); setCurPw(''); setNewPw(''); }} style={{ border: '1.5px solid #E4E9F2', background: '#fff', color: '#101426', fontWeight: 700, fontSize: 14, padding: '11px 18px', borderRadius: 12, cursor: 'pointer' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       <button onClick={onSignOut} style={{ width: '100%', border: 'none', background: 'transparent', color: '#9AA3B5', fontWeight: 700, fontSize: 14, padding: 12, cursor: 'pointer' }}>Sign out</button>
+
+      {/* danger zone */}
+      {confirmDelete ? (
+        <div style={{ background: '#fff', border: '1.5px solid #FBD9DE', borderRadius: 18, padding: 16, marginTop: 8 }}>
+          <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 4 }}>Delete your account?</div>
+          <div style={{ fontSize: 12.5, color: '#717A90', marginBottom: 12, lineHeight: 1.5 }}>
+            This removes you from {state.household.name}. If you’re the last member, the household and all its data are permanently deleted. This can’t be undone.
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={doDelete} disabled={delBusy} style={{ flex: 1, border: 'none', background: '#E23A54', color: '#fff', fontWeight: 700, fontSize: 14, padding: 11, borderRadius: 12, cursor: 'pointer', opacity: delBusy ? 0.6 : 1 }}>{delBusy ? 'Deleting…' : 'Yes, delete my account'}</button>
+            <button onClick={() => setConfirmDelete(false)} style={{ border: '1.5px solid #E4E9F2', background: '#fff', color: '#101426', fontWeight: 700, fontSize: 14, padding: '11px 18px', borderRadius: 12, cursor: 'pointer' }}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', border: 'none', background: 'transparent', color: '#E23A54', fontWeight: 700, fontSize: 13.5, padding: 10, cursor: 'pointer' }}>Delete account</button>
+      )}
     </div>
   );
 }

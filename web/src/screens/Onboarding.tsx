@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { api } from '../lib/api';
 import Art from '../components/Art';
 
-type Step = 'welcome' | 'intro' | 'signup' | 'login' | 'family' | 'notify';
+type Step = 'welcome' | 'intro' | 'signup' | 'login' | 'forgot' | 'family' | 'notify';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -48,6 +48,24 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [householdName, setHouseholdName] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
+
+  const doForgot = async () => {
+    setErr('');
+    if (!email.trim()) {
+      setErr('Enter your email address.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.forgotPassword(email.trim());
+      setForgotSent(true);
+    } catch {
+      setForgotSent(true); // never reveal whether the email exists
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const doSignup = async () => {
     setErr('');
@@ -176,6 +194,36 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
     );
   }
 
+  // ---------- FORGOT PASSWORD ----------
+  if (step === 'forgot') {
+    return (
+      <Scroll>
+        <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', padding: '56px 26px 36px' }}>
+          <BackBtn onClick={() => { setForgotSent(false); setStep('login'); }} />
+          {forgotSent ? (
+            <>
+              <h1 style={titleStyle}>Check your email</h1>
+              <p style={subStyle}>
+                If an account exists for <strong>{email}</strong>, we’ve sent a link to reset your password. It expires in 1 hour.
+              </p>
+              <button style={{ ...primaryBtn, marginTop: 8 }} onClick={() => { setForgotSent(false); setStep('login'); }}>Back to log in</button>
+            </>
+          ) : (
+            <>
+              <h1 style={titleStyle}>Reset your password</h1>
+              <p style={subStyle}>Enter your email and we’ll send you a link to set a new password.</p>
+              <Field label="Email"><input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></Field>
+              {err && <ErrLine msg={err} />}
+              <button style={{ ...primaryBtn, marginTop: 12, opacity: busy ? 0.7 : 1 }} disabled={busy} onClick={doForgot}>
+                {busy ? 'Sending…' : 'Send reset link'}
+              </button>
+            </>
+          )}
+        </div>
+      </Scroll>
+    );
+  }
+
   // ---------- LOG IN ----------
   if (step === 'login') {
     return (
@@ -186,6 +234,9 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
           <p style={subStyle}>Log in to your Croft home.</p>
           <Field label="Email"><input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></Field>
           <Field label="Password"><input style={inputStyle} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" /></Field>
+          <div style={{ textAlign: 'right', marginTop: -6, marginBottom: 4 }}>
+            <button onClick={() => { setErr(''); setForgotSent(false); setStep('forgot'); }} style={{ border: 'none', background: 'none', color: '#3B5BFF', fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 4 }}>Forgot password?</button>
+          </div>
           {err && <ErrLine msg={err} />}
           <button style={{ ...primaryBtn, marginTop: 12, opacity: busy ? 0.7 : 1 }} disabled={busy} onClick={doLogin}>
             {busy ? 'Logging in…' : 'Log in'}

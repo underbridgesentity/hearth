@@ -4,17 +4,23 @@ import Onboarding from './screens/Onboarding';
 import Shell from './Shell';
 import WelcomeTour from './screens/WelcomeTour';
 import JoinInvite from './screens/JoinInvite';
+import ResetPassword from './screens/ResetPassword';
 
 function readJoinToken(): string | null {
   const m = window.location.pathname.match(/^\/join\/(.+)$/);
   if (m) return decodeURIComponent(m[1]);
   return new URLSearchParams(window.location.search).get('join');
 }
+function readResetToken(): string | null {
+  const m = window.location.pathname.match(/^\/reset\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
 
 export default function App() {
   const { ready, user, state, flash } = useStore();
   const [entered, setEntered] = useState(false);
   const [joinToken, setJoinToken] = useState<string | null>(() => readJoinToken());
+  const [resetToken, setResetToken] = useState<string | null>(() => readResetToken());
   const checked = useRef(false);
 
   // Returning users (valid session) skip onboarding straight into the app.
@@ -43,6 +49,20 @@ export default function App() {
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Logo />
         </div>
+      </Frame>
+    );
+  }
+
+  // Password reset link → set-new-password flow.
+  if (resetToken) {
+    const clearUrl = () => window.history.replaceState({}, '', '/');
+    return (
+      <Frame>
+        <ResetPassword
+          token={resetToken}
+          onDone={() => { clearUrl(); setResetToken(null); setEntered(true); }}
+          onCancel={() => { clearUrl(); setResetToken(null); }}
+        />
       </Frame>
     );
   }

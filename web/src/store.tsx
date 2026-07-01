@@ -13,6 +13,8 @@ interface Store {
   signup: (d: { name: string; email: string; password: string; household?: string }) => Promise<void>;
   login: (d: { email: string; password: string }) => Promise<void>;
   acceptInvite: (token: string, d: { name: string; email: string; password: string }) => Promise<void>;
+  resetPassword: (token: string, password: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
   completeOnboarding: () => void;
   refreshState: () => Promise<void>;
@@ -103,6 +105,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setState(null);
   }, []);
+  const resetPassword = useCallback(
+    async (token: string, password: string) => {
+      const { user } = await api.resetPassword(token, password);
+      await afterAuth(user);
+    },
+    [afterAuth]
+  );
+  const deleteAccount = useCallback(async () => {
+    await api.deleteAccount();
+    setUser(null);
+    setState(null);
+  }, []);
 
   // Dismiss the first-run welcome. Update locally at once; persist best-effort so
   // a network blip doesn't re-trap the user (they'll just see it once more).
@@ -124,7 +138,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [flash]
   );
 
-  const value: Store = { ready, user, state, toast, flash, signup, login, acceptInvite, logout, completeOnboarding, refreshState, run };
+  const value: Store = { ready, user, state, toast, flash, signup, login, acceptInvite, resetPassword, deleteAccount, logout, completeOnboarding, refreshState, run };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
