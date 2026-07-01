@@ -7,6 +7,7 @@ import JoinInvite from './screens/JoinInvite';
 import ResetPassword from './screens/ResetPassword';
 import LegalPage from './screens/LegalPage';
 import LockScreen from './screens/LockScreen';
+import Landing from './screens/Landing';
 
 function readLegal(): 'privacy' | 'support' | null {
   const p = window.location.pathname;
@@ -29,6 +30,8 @@ export default function App() {
   const [entered, setEntered] = useState(false);
   const [joinToken, setJoinToken] = useState<string | null>(() => readJoinToken());
   const [resetToken, setResetToken] = useState<string | null>(() => readResetToken());
+  const [showAuth, setShowAuth] = useState(false);
+  const [authStart, setAuthStart] = useState<'signup' | 'login'>('signup');
   const checked = useRef(false);
 
   // Returning users (valid session) skip onboarding straight into the app.
@@ -110,9 +113,20 @@ export default function App() {
   }
 
   if (!(entered && user && state)) {
+    // Logged-out visitors land on the marketing page; the CTAs open sign-up/log-in.
+    if (!user && !showAuth) {
+      return (
+        <Frame wide>
+          <Landing
+            onStart={() => { setAuthStart('signup'); setShowAuth(true); }}
+            onLogin={() => { setAuthStart('login'); setShowAuth(true); }}
+          />
+        </Frame>
+      );
+    }
     return (
       <Frame>
-        <Onboarding onComplete={() => setEntered(true)} />
+        <Onboarding initialStep={authStart} onComplete={() => setEntered(true)} />
       </Frame>
     );
   }

@@ -37,9 +37,9 @@ const INTRO = [
   { art: 'money', title: 'Money, handled together', body: "See what's paid, what's still due, and who owes who — all at a glance." },
 ];
 
-export default function Onboarding({ onComplete }: { onComplete: () => void }) {
+export default function Onboarding({ onComplete, initialStep = 'welcome' }: { onComplete: () => void; initialStep?: Step }) {
   const { signup, login, state, user, run, flash } = useStore();
-  const [step, setStep] = useState<Step>('welcome');
+  const [step, setStep] = useState<Step>(initialStep);
   const [intro, setIntro] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
