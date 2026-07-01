@@ -239,7 +239,14 @@ dataRouter.post('/shopping', async (req: AuthedRequest, res) => {
   await addFeed(hh(req), me.name, me.color, me.initial, `added ${b.data.name} to the shopping list`);
   await sendState(req, res);
 });
+// `{}` toggles bought; `{name}` renames the item.
 dataRouter.patch('/shopping/:id', async (req: AuthedRequest, res) => {
+  if (typeof req.body?.name === 'string') {
+    const name = String(req.body.name).trim();
+    if (!name) return res.status(400).json({ error: 'Type an item' });
+    await query(`UPDATE shopping SET name=$1 WHERE id=$2 AND household_id=$3`, [name, req.params.id, hh(req)]);
+    return sendState(req, res);
+  }
   await query(`UPDATE shopping SET got = NOT got WHERE id=$1 AND household_id=$2`, [req.params.id, hh(req)]);
   await sendState(req, res);
 });
@@ -264,8 +271,39 @@ dataRouter.post('/goals', async (req: AuthedRequest, res) => {
   );
   await sendState(req, res);
 });
+// One PATCH, two shapes: `{}` logs a quick progress nudge; a body with `title`
+// edits the goal (and can add a rand amount via `addAmount`). Both recompute
+// `sub` so the "R.. of R.." text never disagrees with the bar.
+const goalSub = (pct: number, target: number) =>
+  target > 0
+    ? `R${Math.round((target * pct) / 100).toLocaleString('en-ZA')} of R${target.toLocaleString('en-ZA')}`
+    : pct >= 100 ? 'Done!' : pct > 0 ? 'Making progress' : 'Just getting started';
+
 dataRouter.patch('/goals/:id', async (req: AuthedRequest, res) => {
-  await query(`UPDATE goals SET pct = LEAST(100, pct + 8) WHERE id=$1 AND household_id=$2`, [req.params.id, hh(req)]);
+  const g = (await query(`SELECT pct, target FROM goals WHERE id=$1 AND household_id=$2`, [req.params.id, hh(req)])).rows[0];
+  if (!g) return res.status(404).json({ error: 'Goal not found' });
+  if (typeof req.body?.title === 'string') {
+    const b = z.object({
+      title: z.string().min(1),
+      kind: z.string().optional(),
+      target: z.union([z.string(), z.number()]).optional(),
+      addAmount: z.union([z.string(), z.number()]).optional(),
+    }).safeParse(req.body);
+    if (!b.success) return res.status(400).json({ error: 'Add a goal title' });
+    const target = Number(b.data.target) || 0;
+    // Carry the saved-so-far amount across a target change, then add new progress.
+    const savedSoFar = Math.round((num(g.target) * num(g.pct)) / 100) + (Number(b.data.addAmount) || 0);
+    const pct = target > 0 ? Math.min(100, Math.round((savedSoFar / target) * 100)) : num(g.pct);
+    const fam = b.data.kind !== 'personal';
+    const me = await meMember(hh(req), req.memberId);
+    await query(
+      `UPDATE goals SET title=$1, kind=$2, tag=$3, target=$4, pct=$5, sub=$6 WHERE id=$7 AND household_id=$8`,
+      [b.data.title, fam ? 'Family' : me.name, fam ? 'Goal' : 'Personal', target, pct, goalSub(pct, target), req.params.id, hh(req)]
+    );
+    return sendState(req, res);
+  }
+  const pct = Math.min(100, num(g.pct) + 8);
+  await query(`UPDATE goals SET pct=$1, sub=$2 WHERE id=$3 AND household_id=$4`, [pct, goalSub(pct, num(g.target)), req.params.id, hh(req)]);
   await sendState(req, res);
 });
 dataRouter.delete('/goals/:id', async (req: AuthedRequest, res) => {
@@ -321,6 +359,81 @@ dataRouter.delete('/bills/:id', async (req: AuthedRequest, res) => {
   await sendState(req, res);
 });
 
+// ---------------- BUDGET CATEGORIES ----------------
+const PALETTE = ['#3B5BFF', '#16C098', '#FFB020', '#FF6B5C', '#7A5CFF', '#FF5C8A'];
+const rNum = z.union([z.string(), z.number()]).optional();
+
+dataRouter.post('/budget', async (req: AuthedRequest, res) => {
+  const b = z.object({ name: z.string().min(1).max(60), limit: rNum, spent: rNum }).safeParse(req.body);
+  if (!b.success) return res.status(400).json({ error: 'Add a category name' });
+  const count = num((await query(`SELECT COUNT(*) FROM budget WHERE household_id=$1`, [hh(req)])).rows[0].count);
+  await query(
+    `INSERT INTO budget (household_id, name, spent, budget_limit, color, sort) VALUES ($1,$2,$3,$4,$5,${nextSort('budget')})`,
+    [hh(req), b.data.name, Number(b.data.spent) || 0, Number(b.data.limit) || 0, PALETTE[count % PALETTE.length]]
+  );
+  await sendState(req, res);
+});
+dataRouter.patch('/budget/:id', async (req: AuthedRequest, res) => {
+  const b = z.object({ name: z.string().min(1).max(60), limit: rNum, spent: rNum }).safeParse(req.body);
+  if (!b.success) return res.status(400).json({ error: 'Add a category name' });
+  await query(
+    `UPDATE budget SET name=$1, spent=$2, budget_limit=$3 WHERE id=$4 AND household_id=$5`,
+    [b.data.name, Number(b.data.spent) || 0, Number(b.data.limit) || 0, req.params.id, hh(req)]
+  );
+  await sendState(req, res);
+});
+dataRouter.delete('/budget/:id', async (req: AuthedRequest, res) => {
+  await query(`DELETE FROM budget WHERE id=$1 AND household_id=$2`, [req.params.id, hh(req)]);
+  await sendState(req, res);
+});
+
+// ---------------- SAVINGS GOALS ----------------
+dataRouter.post('/savings', async (req: AuthedRequest, res) => {
+  const b = z.object({ name: z.string().min(1).max(60), target: rNum, saved: rNum }).safeParse(req.body);
+  if (!b.success) return res.status(400).json({ error: 'Add a savings goal name' });
+  const count = num((await query(`SELECT COUNT(*) FROM savings WHERE household_id=$1`, [hh(req)])).rows[0].count);
+  await query(
+    `INSERT INTO savings (household_id, name, saved, target, color, sort) VALUES ($1,$2,$3,$4,$5,${nextSort('savings')})`,
+    [hh(req), b.data.name, Number(b.data.saved) || 0, Number(b.data.target) || 0, PALETTE[(count + 1) % PALETTE.length]]
+  );
+  await sendState(req, res);
+});
+dataRouter.patch('/savings/:id', async (req: AuthedRequest, res) => {
+  const b = z.object({ name: z.string().min(1).max(60), target: rNum, saved: rNum }).safeParse(req.body);
+  if (!b.success) return res.status(400).json({ error: 'Add a savings goal name' });
+  await query(
+    `UPDATE savings SET name=$1, saved=$2, target=$3 WHERE id=$4 AND household_id=$5`,
+    [b.data.name, Number(b.data.saved) || 0, Number(b.data.target) || 0, req.params.id, hh(req)]
+  );
+  await sendState(req, res);
+});
+dataRouter.delete('/savings/:id', async (req: AuthedRequest, res) => {
+  await query(`DELETE FROM savings WHERE id=$1 AND household_id=$2`, [req.params.id, hh(req)]);
+  await sendState(req, res);
+});
+
+// ---------------- SETTLE UP (who owes who) ----------------
+dataRouter.post('/settle', async (req: AuthedRequest, res) => {
+  const b = z.object({
+    memberId: z.string().min(1),
+    dir: z.enum(['in', 'out']), // in = they owe you, out = you owe them
+    amount: z.union([z.string(), z.number()]),
+    note: z.string().max(120).optional(),
+  }).safeParse(req.body);
+  if (!b.success) return res.status(400).json({ error: 'Pick a person and an amount' });
+  const m = (await query(`SELECT name FROM members WHERE id=$1 AND household_id=$2`, [b.data.memberId, hh(req)])).rows[0];
+  if (!m) return res.status(400).json({ error: 'Pick a family member' });
+  const amt = Math.abs(Number(b.data.amount) || 0);
+  if (!amt) return res.status(400).json({ error: 'Enter an amount' });
+  const txt = b.data.dir === 'in' ? `${m.name} owes you` : `You owe ${m.name}`;
+  await query(
+    `INSERT INTO settle (household_id, txt, detail, amount, dir, who, settled, sort)
+     VALUES ($1,$2,$3,$4,$5,$6,false,${nextSort('settle')})`,
+    [hh(req), txt, (b.data.note || '').trim(), 'R' + amt.toLocaleString('en-ZA'), b.data.dir, m.name]
+  );
+  await sendState(req, res);
+});
+
 // ---------------- MEMBERS ----------------
 dataRouter.post('/members', async (req: AuthedRequest, res) => {
   const b = z.object({ name: z.string().min(1), role: z.string().optional() }).safeParse(req.body);
@@ -333,6 +446,29 @@ dataRouter.post('/members', async (req: AuthedRequest, res) => {
   );
   await sendState(req, res);
 });
+// Edit a member's name / role / colour. Display text snapshotted on old events
+// and bills keeps the old name (matches how the feed works); new items pick up
+// the new name.
+dataRouter.patch('/members/:id', async (req: AuthedRequest, res) => {
+  const b = z.object({
+    name: z.string().min(1).max(80).optional(),
+    role: z.string().max(40).optional(),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  }).safeParse(req.body);
+  if (!b.success) return res.status(400).json({ error: 'Invalid details' });
+  const name = b.data.name?.trim();
+  await query(
+    `UPDATE members SET
+       name = COALESCE($1, name),
+       initial = COALESCE($2, initial),
+       role = COALESCE($3, role),
+       color = COALESCE($4, color)
+     WHERE id=$5 AND household_id=$6`,
+    [name || null, name ? name.charAt(0).toUpperCase() : null, b.data.role ?? null, b.data.color || null, req.params.id, hh(req)]
+  );
+  await sendState(req, res);
+});
+
 dataRouter.delete('/members/:id', async (req: AuthedRequest, res) => {
   await query(`DELETE FROM members WHERE id=$1 AND household_id=$2 AND is_you=false`, [req.params.id, hh(req)]);
   await sendState(req, res);

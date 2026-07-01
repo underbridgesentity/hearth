@@ -24,8 +24,14 @@ export default function Home({ nav }: { nav: Nav }) {
   const unpaid = state.bills.filter((b) => b.status !== 'paid');
 
   const todayList = [
-    ...todayEvents.map((e) => ({ key: e.id, illo: e.illo, color: e.color, title: e.title, meta: e.loc, time: `${e.time} ${e.ampm}`.trim(), tappable: false as const })),
-    ...todayTasks.map((t) => ({ key: t.id, illo: t.type === 'Reminder' ? 'bell' : 'todo', color: t.from_color, title: t.title, meta: `From ${t.from_name} · ${t.type}`, tappable: true as const, id: t.id })),
+    ...todayEvents.map((e) => ({
+      key: e.id, illo: e.illo, color: e.color, title: e.title, meta: e.loc, time: `${e.time} ${e.ampm}`.trim(), tappable: false as const,
+      onEdit: () => nav.openForm('event', { editId: e.id, title: e.title, date: e.event_date || '', time: e.event_time || '', who: e.assignee_ids || [] }),
+    })),
+    ...todayTasks.map((t) => ({
+      key: t.id, illo: t.type === 'Reminder' ? 'bell' : 'todo', color: t.from_color, title: t.title, meta: `From ${t.from_name} · ${t.type}`, tappable: true as const, id: t.id,
+      onEdit: () => nav.openForm('task', { editId: t.id, title: t.title, type: t.type, assignees: t.assignee_ids || [] }),
+    })),
   ];
 
   const goal = state.goals.find((g) => g.kind === 'Family') || state.goals[0];
@@ -53,7 +59,14 @@ export default function Home({ nav }: { nav: Nav }) {
         {todayList.map((it) => (
           <div key={it.key} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 2px', borderBottom: '1px solid #EFEBE3' }}>
             <Icon name={it.illo} color={it.color} size={42} radius={13} glyph={22} />
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`Edit ${it.title}`}
+              onClick={it.onEdit}
+              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); it.onEdit(); } }}
+              style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+            >
               <div style={{ fontWeight: 700, fontSize: 14.5, lineHeight: 1.25 }}>{it.title}</div>
               <div style={{ fontSize: 12, color: '#6F6C67', marginTop: 2 }}>{it.meta}</div>
             </div>

@@ -10,11 +10,12 @@ import { AddSheet, NotifSheet, FormSheet } from './screens/Sheets';
 
 export type Tab = 'home' | 'calendar' | 'tasks' | 'money' | 'family';
 export type Plan = 'todos' | 'lists' | 'goals';
-export type FormType = 'event' | 'bill' | 'goal' | 'task';
+export type FormType = 'event' | 'bill' | 'goal' | 'task' | 'budget' | 'saving' | 'settle';
 
 export interface FormData {
   title?: string; name?: string; amount?: string; date?: string;
   time?: string; due?: string; target?: string; kind?: string; type?: string;
+  limit?: string; spent?: string; saved?: string; note?: string; dir?: string;
   // Multi-select member assignment (member ids).
   who?: string[]; payer?: string[]; assignees?: string[];
   // Present when the form edits an existing item instead of creating one.
@@ -103,6 +104,9 @@ export default function Shell({ onSignedOut }: { onSignedOut: () => void }) {
         bill: { name: '', amount: '', due: '', payer: you ? [you.id] : [] },
         goal: { title: '', kind: 'family', target: '' },
         task: { title: '', type: 'Task', assignees: [] },
+        budget: { name: '', limit: '', spent: '' },
+        saving: { name: '', target: '', saved: '' },
+        settle: { who: [], dir: 'in', amount: '', note: '' },
       };
       setForm(f);
       setFd(data || defaults[f]);

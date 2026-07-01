@@ -86,13 +86,32 @@ export const api = {
   delTask: (id: string) => req<AppState>(`/tasks/${id}`, { method: 'DELETE' }),
 
   addShop: (name: string) => req<AppState>('/shopping', { method: 'POST', body: JSON.stringify({ name }) }),
+  renameShop: (id: string, name: string) =>
+    req<AppState>(`/shopping/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
   toggleShop: (id: string) => req<AppState>(`/shopping/${id}`, { method: 'PATCH', body: '{}' }),
   delShop: (id: string) => req<AppState>(`/shopping/${id}`, { method: 'DELETE' }),
 
   addGoal: (d: { title: string; kind?: string; target?: string }) =>
     req<AppState>('/goals', { method: 'POST', body: JSON.stringify(d) }),
+  updGoal: (id: string, d: { title: string; kind?: string; target?: string; addAmount?: string }) =>
+    req<AppState>(`/goals/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   bumpGoal: (id: string) => req<AppState>(`/goals/${id}`, { method: 'PATCH', body: '{}' }),
   delGoal: (id: string) => req<AppState>(`/goals/${id}`, { method: 'DELETE' }),
+
+  addBudget: (d: { name: string; limit?: string; spent?: string }) =>
+    req<AppState>('/budget', { method: 'POST', body: JSON.stringify(d) }),
+  updBudget: (id: string, d: { name: string; limit?: string; spent?: string }) =>
+    req<AppState>(`/budget/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
+  delBudget: (id: string) => req<AppState>(`/budget/${id}`, { method: 'DELETE' }),
+
+  addSaving: (d: { name: string; target?: string; saved?: string }) =>
+    req<AppState>('/savings', { method: 'POST', body: JSON.stringify(d) }),
+  updSaving: (id: string, d: { name: string; target?: string; saved?: string }) =>
+    req<AppState>(`/savings/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
+  delSaving: (id: string) => req<AppState>(`/savings/${id}`, { method: 'DELETE' }),
+
+  addSettle: (d: { memberId: string; dir: 'in' | 'out'; amount: string; note?: string }) =>
+    req<AppState>('/settle', { method: 'POST', body: JSON.stringify(d) }),
 
   addBill: (d: { name: string; amount?: string; due?: string; payer?: string[] }) =>
     req<AppState>('/bills', { method: 'POST', body: JSON.stringify(d) }),
@@ -103,6 +122,8 @@ export const api = {
 
   addMember: (d: { name: string; role?: string }) =>
     req<AppState>('/members', { method: 'POST', body: JSON.stringify(d) }),
+  updMember: (id: string, d: { name?: string; role?: string; color?: string }) =>
+    req<AppState>(`/members/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   delMember: (id: string) => req<AppState>(`/members/${id}`, { method: 'DELETE' }),
 
   markAllRead: () => req<AppState>('/notifications/read-all', { method: 'POST' }),

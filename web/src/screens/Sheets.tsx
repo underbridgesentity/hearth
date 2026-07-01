@@ -80,8 +80,9 @@ export function FormSheet({ form, fd, setFd, nav }: { form: FormType; fd: FormDa
     setFd({ ...fd, [k]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] });
   };
   const editing = !!fd.editId;
-  const noun = form === 'event' ? 'event' : form === 'bill' ? 'bill' : form === 'task' ? 'to-do' : 'goal';
-  const title = `${editing ? 'Edit' : 'New'} ${noun}`;
+  const NOUNS: Record<FormType, string> = { event: 'event', bill: 'bill', task: 'to-do', goal: 'goal', budget: 'budget category', saving: 'savings goal', settle: 'IOU' };
+  const noun = NOUNS[form];
+  const title = form === 'settle' ? 'Who owes who' : `${editing ? 'Edit' : 'New'} ${noun}`;
   const memberChips = state.members.map((m) => ({ id: m.id, label: m.name, color: m.color }));
 
   const submit = async () => {
@@ -100,17 +101,33 @@ export function FormSheet({ form, fd, setFd, nav }: { form: FormType; fd: FormDa
       const d = { title: fd.title, type: fd.type, assignees: fd.assignees };
       await run(editing ? api.updTask(fd.editId!, d) : api.addTask(d), editing ? 'To-do updated' : 'To-do added');
       if (!editing) { nav.goTab('tasks'); nav.goPlan('todos'); }
-    } else {
+    } else if (form === 'goal') {
       if (!fd.title?.trim()) return flash('Add a goal title');
-      await run(api.addGoal({ title: fd.title, kind: fd.kind, target: fd.target }), 'Goal added');
-      nav.goTab('tasks');
-      nav.goPlan('goals');
+      const d = { title: fd.title, kind: fd.kind, target: fd.target };
+      await run(
+        editing ? api.updGoal(fd.editId!, { ...d, addAmount: fd.amount }) : api.addGoal(d),
+        editing ? 'Goal updated' : 'Goal added'
+      );
+      if (!editing) { nav.goTab('tasks'); nav.goPlan('goals'); }
+    } else if (form === 'budget') {
+      if (!fd.name?.trim()) return flash('Add a category name');
+      const d = { name: fd.name, limit: fd.limit, spent: fd.spent };
+      await run(editing ? api.updBudget(fd.editId!, d) : api.addBudget(d), editing ? 'Budget updated' : 'Budget category added');
+    } else if (form === 'saving') {
+      if (!fd.name?.trim()) return flash('Add a savings goal name');
+      const d = { name: fd.name, target: fd.target, saved: fd.saved };
+      await run(editing ? api.updSaving(fd.editId!, d) : api.addSaving(d), editing ? 'Savings goal updated' : 'Savings goal added');
+    } else {
+      const memberId = (fd.who || [])[0];
+      if (!memberId) return flash('Pick a family member');
+      if (!Number(fd.amount)) return flash('Enter an amount');
+      await run(api.addSettle({ memberId, dir: (fd.dir as 'in' | 'out') || 'in', amount: fd.amount!, note: fd.note }), 'Added to who owes who');
     }
     nav.closeSheet();
   };
 
   const remove = async () => {
-    const del = form === 'event' ? api.delEvent : form === 'bill' ? api.delBill : api.delTask;
+    const del = { event: api.delEvent, bill: api.delBill, task: api.delTask, goal: api.delGoal, budget: api.delBudget, saving: api.delSaving, settle: api.delTask }[form];
     await run(del(fd.editId!), 'Removed');
     nav.closeSheet();
   };
@@ -178,18 +195,61 @@ export function FormSheet({ form, fd, setFd, nav }: { form: FormType; fd: FormDa
             </div>
           </div>
           <Field label="Target amount (optional)"><input style={inp} type="number" value={fd.target || ''} onChange={(e) => set('target', e.target.value)} placeholder="e.g. 15000" /></Field>
+          {editing && Number(fd.target) > 0 && (
+            <Field label="Add to progress (R, optional)"><input style={inp} type="number" value={fd.amount || ''} onChange={(e) => set('amount', e.target.value)} placeholder="e.g. 500" /></Field>
+          )}
+        </div>
+      )}
+
+      {form === 'budget' && (
+        <div>
+          <Field label="Category name"><input style={inp} value={fd.name || ''} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Groceries" /></Field>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Monthly limit (R)</Lbl><input style={inp} type="number" value={fd.limit || ''} onChange={(e) => set('limit', e.target.value)} placeholder="0" /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Spent so far (R)</Lbl><input style={inp} type="number" value={fd.spent || ''} onChange={(e) => set('spent', e.target.value)} placeholder="0" /></div>
+          </div>
+        </div>
+      )}
+
+      {form === 'saving' && (
+        <div>
+          <Field label="What are you saving for?"><input style={inp} value={fd.name || ''} onChange={(e) => set('name', e.target.value)} placeholder="e.g. December holiday" /></Field>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Target (R)</Lbl><input style={inp} type="number" value={fd.target || ''} onChange={(e) => set('target', e.target.value)} placeholder="0" /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lbl>Saved so far (R)</Lbl><input style={inp} type="number" value={fd.saved || ''} onChange={(e) => set('saved', e.target.value)} placeholder="0" /></div>
+          </div>
+        </div>
+      )}
+
+      {form === 'settle' && (
+        <div>
+          <div style={{ marginBottom: 16 }}>
+            <Lbl>Direction</Lbl>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[{ k: 'in', l: 'They owe me' }, { k: 'out', l: 'I owe them' }].map((o) => {
+                const sel = (fd.dir || 'in') === o.k;
+                return <button key={o.k} onClick={() => set('dir', o.k)} style={{ flex: 1, border: 'none', cursor: 'pointer', padding: '11px 0', borderRadius: 12, fontWeight: 700, fontSize: 13.5, background: sel ? '#3B5BFF' : '#EBE7DF', color: sel ? '#fff' : '#181922' }}>{o.l}</button>;
+              })}
+            </div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <Lbl>Who</Lbl>
+            <Chips items={memberChips} value={fd.who || []} onToggle={(id) => setFd({ ...fd, who: [id] })} />
+          </div>
+          <Field label="Amount (R)"><input style={inp} type="number" value={fd.amount || ''} onChange={(e) => set('amount', e.target.value)} placeholder="e.g. 450" /></Field>
+          <Field label="What for? (optional)"><input style={inp} value={fd.note || ''} onChange={(e) => set('note', e.target.value)} placeholder="e.g. Groceries last week" /></Field>
         </div>
       )}
 
       <button onClick={submit} style={{ width: '100%', padding: 16, borderRadius: 16, border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 15.5, cursor: 'pointer', boxShadow: '0 8px 20px rgba(59,91,255,0.32)', marginTop: 22 }}>{editing ? 'Save changes' : 'Add'}</button>
-      {editing && form !== 'goal' && (
+      {editing && (
         <button onClick={remove} style={{ width: '100%', border: 'none', background: 'none', color: '#FF4D5E', fontWeight: 700, fontSize: 13.5, padding: '14px 0 2px', cursor: 'pointer' }}>Delete this {noun}</button>
       )}
     </div>
   );
 }
 
-const inp: React.CSSProperties = { width: '100%', minWidth: 0, maxWidth: '100%', height: 51, boxSizing: 'border-box', padding: '14px 16px', borderRadius: 14, border: '1.5px solid #E8E3DB', background: '#fff', fontSize: 15, color: '#181922', outline: 'none', WebkitAppearance: 'none', appearance: 'none' };
+const inp: React.CSSProperties = { width: '100%', minWidth: 0, maxWidth: '100%', height: 51, boxSizing: 'border-box', padding: '14px 16px', borderRadius: 14, border: '1.5px solid #E8E3DB', background: '#fff', fontSize: 16, color: '#181922', outline: 'none', WebkitAppearance: 'none', appearance: 'none' };
 function Lbl({ children }: { children: React.ReactNode }) {
   return <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#6F6C67', marginBottom: 8 }}>{children}</label>;
 }

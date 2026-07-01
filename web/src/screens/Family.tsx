@@ -9,7 +9,7 @@ import Icon from '../components/Icon';
 import { Avatar, YouBadge } from './Onboarding';
 
 const grotesk = "'Geist', sans-serif";
-const pwInput: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 12, padding: '12px 14px', fontSize: 14.5, outline: 'none', fontFamily: 'inherit', color: '#181922' };
+const pwInput: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 12, padding: '12px 14px', fontSize: 16, outline: 'none', fontFamily: 'inherit', color: '#181922' };
 
 export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: () => void }) {
   const { state, user, run, flash, deleteAccount, setLockEnabled } = useStore();
@@ -31,7 +31,16 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
   const [pinA, setPinA] = useState('');
   const [pinB, setPinB] = useState('');
   const [lockBusy, setLockBusy] = useState(false);
+  const [editMember, setEditMember] = useState<{ id: string; name: string; role: string; color: string } | null>(null);
   if (!state) return null;
+
+  const saveMember = () => {
+    if (!editMember) return;
+    const name = editMember.name.trim();
+    if (!name) return flash('Add a name');
+    run(api.updMember(editMember.id, { name, role: editMember.role.trim(), color: editMember.color }), 'Member updated');
+    setEditMember(null);
+  };
   const locked = !!user?.locked;
   const s: Settings = state.household.settings || {};
 
@@ -186,18 +195,43 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
       {/* members */}
       <div style={{ background: '#fff', borderRadius: 22, padding: '4px 16px', boxShadow: '0 1px 2px rgba(24,25,34,0.04), 0 12px 30px -16px rgba(24,25,34,0.16)', marginBottom: 14 }}>
         {state.members.map((m) => (
+          editMember?.id === m.id ? (
+            <div key={m.id} style={{ padding: '13px 0', borderBottom: '1px solid #EFEBE3' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <input autoFocus value={editMember.name} onChange={(e) => setEditMember({ ...editMember, name: e.target.value })} placeholder="Name" style={{ flex: 1.4, minWidth: 0, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 12, padding: '11px 13px', fontSize: 16, outline: 'none', color: '#181922' }} />
+                <input value={editMember.role} onChange={(e) => setEditMember({ ...editMember, role: e.target.value })} placeholder="Role (e.g. Mom)" style={{ flex: 1, minWidth: 0, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 12, padding: '11px 13px', fontSize: 16, outline: 'none', color: '#181922' }} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
+                {['#3B5BFF', '#7A5CFF', '#16C098', '#FF6B5C', '#FFB020', '#FF5C8A'].map((c) => (
+                  <button key={c} onClick={() => setEditMember({ ...editMember, color: c })} aria-label={`Colour ${c}`} style={{ width: 30, height: 30, borderRadius: '50%', background: c, border: editMember.color === c ? '3px solid #181922' : '3px solid transparent', cursor: 'pointer', padding: 0 }} />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={saveMember} style={{ flex: 1, border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '10px', borderRadius: 12, cursor: 'pointer' }}>Save</button>
+                <button onClick={() => setEditMember(null)} style={{ flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', color: '#181922', fontWeight: 700, fontSize: 13.5, padding: '10px', borderRadius: 12, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 0', borderBottom: '1px solid #EFEBE3' }}>
             <Avatar color={m.color} initial={m.initial} size={46} />
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`Edit ${m.name}`}
+              onClick={() => setEditMember({ id: m.id, name: m.name, role: m.role, color: m.color })}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditMember({ id: m.id, name: m.name, role: m.role, color: m.color }); } }}
+              style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+            >
               <div style={{ fontWeight: 700, fontSize: 15.5 }}>{m.name}</div>
-              <div style={{ fontSize: 12.5, color: '#6F6C67' }}>{m.role}</div>
+              <div style={{ fontSize: 12.5, color: '#6F6C67' }}>{m.role || 'Tap to edit'}</div>
             </div>
             {m.you ? <YouBadge /> : (
-              <button onClick={() => run(api.delMember(m.id), `${m.name} removed`)} title="Remove" style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}>
+              <button onClick={() => run(api.delMember(m.id), `${m.name} removed`)} title="Remove" aria-label={`Remove ${m.name}`} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M10 7V5h4v2M9 7l.7 12h8.6L19 7" stroke="#C9C3B9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             )}
           </div>
+          )
         ))}
         <div style={{ height: 4 }} />
       </div>
@@ -206,7 +240,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
         <div style={{ background: '#fff', borderRadius: 18, padding: 16, boxShadow: '0 1px 2px rgba(24,25,34,0.04), 0 12px 30px -16px rgba(24,25,34,0.16)', marginBottom: 26 }}>
           <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 4 }}>Invite link ready</div>
           <div style={{ fontSize: 12.5, color: '#6F6C67', marginBottom: 12 }}>Share this with the person you want to join {state.household.name}. It works once and expires in 14 days.</div>
-          <input readOnly value={inviteLink} onFocus={(e) => e.currentTarget.select()} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #E8E3DB', background: '#F5F4F1', borderRadius: 12, padding: '11px 13px', fontSize: 12.5, color: '#3B5BFF', marginBottom: 10 }} />
+          <input readOnly value={inviteLink} onFocus={(e) => e.currentTarget.select()} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #E8E3DB', background: '#F5F4F1', borderRadius: 12, padding: '11px 13px', fontSize: 16, color: '#3B5BFF', marginBottom: 10 }} />
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={copyLink} style={{ flex: 1, border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 14, padding: '11px', borderRadius: 12, cursor: 'pointer' }}>Copy link</button>
             <button onClick={async () => { if (!(await nativeShare({ title: 'Join our home on Croft', url: inviteLink }))) (navigator as any).share?.({ title: 'Join our home on Croft', url: inviteLink }).catch(() => {}); }} style={{ flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', color: '#181922', fontWeight: 700, fontSize: 14, padding: '11px', borderRadius: 12, cursor: 'pointer' }}>Share</button>
@@ -216,7 +250,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
       ) : inviting ? (
         <div style={{ marginBottom: 26 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input autoFocus value={inviteName} onChange={(e) => setInviteName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && invite()} placeholder="Name (e.g. a young child)" style={{ flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 14, padding: '13px 16px', fontSize: 14.5, outline: 'none' }} />
+            <input autoFocus value={inviteName} onChange={(e) => setInviteName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && invite()} placeholder="Name (e.g. a young child)" style={{ flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 14, padding: '13px 16px', fontSize: 16, outline: 'none' }} />
             <button onClick={invite} style={{ border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 14, padding: '0 18px', borderRadius: 14, cursor: 'pointer' }}>Add</button>
           </div>
           <button onClick={() => setInviting(false)} style={{ border: 'none', background: 'none', color: '#7D776E', fontWeight: 700, fontSize: 13, padding: '8px 2px 0', cursor: 'pointer' }}>Cancel</button>
@@ -224,7 +258,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
       ) : (
         <div style={{ marginBottom: 26 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input value={inviteAddr} onChange={(e) => setInviteAddr(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendEmailInvite()} type="email" placeholder="Email address to invite" style={{ flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 14, padding: '13px 16px', fontSize: 14.5, outline: 'none' }} />
+            <input value={inviteAddr} onChange={(e) => setInviteAddr(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendEmailInvite()} type="email" placeholder="Email address to invite" style={{ flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 14, padding: '13px 16px', fontSize: 16, outline: 'none' }} />
             <button onClick={sendEmailInvite} disabled={emailBusy} style={{ border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 14, padding: '0 20px', borderRadius: 14, cursor: 'pointer', opacity: emailBusy ? 0.6 : 1 }}>{emailBusy ? '…' : 'Invite'}</button>
           </div>
           <button onClick={makeInviteLink} disabled={linkBusy} style={{ width: '100%', border: 'none', background: 'none', color: '#3B5BFF', fontWeight: 700, fontSize: 13.5, padding: '11px 0 0', cursor: 'pointer' }}>

@@ -68,32 +68,46 @@ export default function Money({ nav }: { nav: Nav }) {
 
       {/* Budget */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '26px 2px 12px' }}>Monthly budget</div>
-      <div style={{ background: '#fff', borderRadius: 22, padding: '18px 16px 8px', boxShadow: '0 1px 2px rgba(24,25,34,0.04), 0 12px 30px -16px rgba(24,25,34,0.16)', marginBottom: 24 }}>
-        {state.budget.map((c) => {
-          const over = c.spent > c.limit;
-          const barColor = over ? '#FF4D5E' : c.color;
-          const w = Math.min(100, c.limit ? Math.round((c.spent / c.limit) * 100) : 0);
-          return (
-            <div key={c.id} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 7 }}>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{c.name}</span>
-                <span style={{ fontSize: 12.5, color: '#6F6C67' }}><b style={{ color: barColor, fontWeight: 700, fontFamily: grotesk }}>{money(c.spent)}</b> / {money(c.limit)}</span>
+      {state.budget.length > 0 && (
+        <div style={{ background: '#fff', borderRadius: 22, padding: '18px 16px 8px', boxShadow: '0 1px 2px rgba(24,25,34,0.04), 0 12px 30px -16px rgba(24,25,34,0.16)', marginBottom: 12 }}>
+          {state.budget.map((c) => {
+            const over = c.spent > c.limit;
+            const barColor = over ? '#FF4D5E' : c.color;
+            const w = Math.min(100, c.limit ? Math.round((c.spent / c.limit) * 100) : 0);
+            const editBudget = () => nav.openForm('budget', { editId: c.id, name: c.name, limit: c.limit ? String(c.limit) : '', spent: c.spent ? String(c.spent) : '' });
+            return (
+              <div
+                key={c.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Edit budget "${c.name}"`}
+                onClick={editBudget}
+                onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); editBudget(); } }}
+                style={{ marginBottom: 16, cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 7 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{c.name}</span>
+                  <span style={{ fontSize: 12.5, color: '#6F6C67' }}><b style={{ color: barColor, fontWeight: 700, fontFamily: grotesk }}>{money(c.spent)}</b> / {money(c.limit)}</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 100, background: '#EBE7DF', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${w}%`, borderRadius: 100, background: barColor }} />
+                </div>
               </div>
-              <div style={{ height: 8, borderRadius: 100, background: '#EBE7DF', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${w}%`, borderRadius: 100, background: barColor }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+      {state.budget.length === 0 && (
+        <div style={{ fontSize: 13, color: '#6F6C67', margin: '0 2px 12px' }}>Track monthly spending by category - groceries, transport, school.</div>
+      )}
+      <button onClick={() => nav.openForm('budget')} style={{ ...dashedAdd, marginBottom: 24 }}>+ Add a budget category</button>
 
       {/* Who owes who */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 6px' }}>Who owes who</div>
       <div style={{ fontSize: 13, color: '#6F6C67', margin: '0 2px 12px' }}>
-        {net > 0 ? <>Overall, you owe Naledi <b style={{ color: '#FF5C8A' }}>{money(net)}</b></> : net < 0 ? <>Overall, Naledi owes you <b style={{ color: '#16C098' }}>{money(-net)}</b></> : <>All square - nobody owes anyone.</>}
+        {net > 0 ? <>Overall, you owe <b style={{ color: '#FF5C8A' }}>{money(net)}</b></> : net < 0 ? <>Overall, you're owed <b style={{ color: '#16C098' }}>{money(-net)}</b></> : <>All square - nobody owes anyone.</>}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-        {activeSettle.length === 0 && <div style={{ background: '#fff', borderRadius: 18, padding: '14px 16px', boxShadow: '0 2px 8px rgba(16,20,38,0.04)', fontSize: 13.5, color: '#6F6C67' }}>Nothing to settle right now.</div>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
         {activeSettle.map((s) => (
           <div key={s.id} style={{ background: '#fff', borderRadius: 18, padding: '14px 16px', boxShadow: '0 2px 8px rgba(16,20,38,0.04)', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -103,25 +117,44 @@ export default function Money({ nav }: { nav: Nav }) {
             <button onClick={() => run(s.dir === 'in' ? api.nudge(s.who) : api.settleUp(s.id), s.dir === 'in' ? `Reminder sent to ${s.who}` : 'Settled up')} style={{ flexShrink: 0, border: 'none', background: '#EFEBE3', color: '#3B5BFF', fontWeight: 700, fontSize: 12.5, padding: '9px 15px', borderRadius: 100, cursor: 'pointer' }}>
               {s.dir === 'in' ? 'Remind' : 'Settle up'}
             </button>
+            {s.dir === 'in' && (
+              <button onClick={() => run(api.settleUp(s.id), 'Settled up')} style={{ flexShrink: 0, border: 'none', background: 'none', color: '#7D776E', fontWeight: 700, fontSize: 12, cursor: 'pointer', padding: '9px 2px' }}>Settle</button>
+            )}
           </div>
         ))}
       </div>
+      <button onClick={() => nav.openForm('settle')} style={{ ...dashedAdd, marginBottom: 24 }}>+ Add who owes who</button>
 
       {/* Savings */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 12px' }}>Savings goals</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {state.savings.map((v) => (
-          <div key={v.id} style={{ background: '#fff', borderRadius: 20, padding: 16, boxShadow: '0 1px 2px rgba(24,25,34,0.04), 0 12px 30px -16px rgba(24,25,34,0.16)' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 15 }}>{v.name}</span>
-              <span style={{ fontSize: 12.5, color: '#6F6C67' }}><b style={{ color: v.color, fontWeight: 700, fontFamily: grotesk }}>{money(v.saved)}</b> / {money(v.target)}</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
+        {state.savings.length === 0 && (
+          <div style={{ fontSize: 13, color: '#6F6C67', margin: '0 2px' }}>Put a number on the things you're saving for, together.</div>
+        )}
+        {state.savings.map((v) => {
+          const editSaving = () => nav.openForm('saving', { editId: v.id, name: v.name, target: v.target ? String(v.target) : '', saved: v.saved ? String(v.saved) : '' });
+          return (
+            <div
+              key={v.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Edit savings goal "${v.name}"`}
+              onClick={editSaving}
+              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); editSaving(); } }}
+              style={{ background: '#fff', borderRadius: 20, padding: 16, boxShadow: '0 1px 2px rgba(24,25,34,0.04), 0 12px 30px -16px rgba(24,25,34,0.16)', cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: 15 }}>{v.name}</span>
+                <span style={{ fontSize: 12.5, color: '#6F6C67' }}><b style={{ color: v.color, fontWeight: 700, fontFamily: grotesk }}>{money(v.saved)}</b> / {money(v.target)}</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 100, background: '#EBE7DF', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${v.target ? Math.round((v.saved / v.target) * 100) : 0}%`, borderRadius: 100, background: v.color }} />
+              </div>
             </div>
-            <div style={{ height: 8, borderRadius: 100, background: '#EBE7DF', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${v.target ? Math.round((v.saved / v.target) * 100) : 0}%`, borderRadius: 100, background: v.color }} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+      <button onClick={() => nav.openForm('saving')} style={dashedAdd}>+ Add a savings goal</button>
     </div>
   );
 }

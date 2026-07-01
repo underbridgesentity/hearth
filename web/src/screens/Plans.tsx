@@ -24,7 +24,7 @@ export default function Plans({ nav }: { nav: Nav }) {
 
       {nav.plan === 'todos' && <Todos nav={nav} />}
       {nav.plan === 'lists' && <Lists />}
-      {nav.plan === 'goals' && <Goals />}
+      {nav.plan === 'goals' && <Goals nav={nav} />}
     </div>
   );
 }
@@ -122,7 +122,15 @@ function Todos({ nav }: { nav: Nav }) {
 function Lists() {
   const { state, run } = useStore();
   const [draft, setDraft] = useState('');
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   if (!state) return null;
+  const saveRename = () => {
+    if (!editing) return;
+    const v = editing.name.trim();
+    const orig = state.shopping.find((x) => x.id === editing.id)?.name;
+    setEditing(null);
+    if (v && v !== orig) run(api.renameShop(editing.id, v), 'Item renamed');
+  };
   const tint: Record<string, string> = { you: '#EAEEFF', naledi: '#FFE9F1', amara: '#FFF4E0', lwazi: '#E3F8F1' };
   const left = state.shopping.filter((x) => !x.got).length;
   const colorFor = (key: string) => state.members.find((m) => m.id === key || m.name.toLowerCase() === key)?.color;
@@ -162,7 +170,27 @@ function Lists() {
               <button onClick={() => run(api.toggleShop(x.id))} style={{ ...checkbox, width: 25, height: 25, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {x.got && <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="#16C098" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
               </button>
-              <div style={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: x.got ? '#7D776E' : '#181922', textDecoration: x.got ? 'line-through' : 'none' }}>{x.name}</div>
+              {editing?.id === x.id ? (
+                <input
+                  autoFocus
+                  value={editing.name}
+                  onChange={(e) => setEditing({ id: x.id, name: e.target.value })}
+                  onBlur={saveRename}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveRename(); if (e.key === 'Escape') setEditing(null); }}
+                  style={{ flex: 1, minWidth: 0, border: '1.5px solid #3B5BFF', background: '#fff', borderRadius: 10, padding: '7px 10px', fontSize: 16, fontWeight: 600, color: '#181922', outline: 'none' }}
+                />
+              ) : (
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Rename "${x.name}"`}
+                  onClick={() => setEditing({ id: x.id, name: x.name })}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing({ id: x.id, name: x.name }); } }}
+                  style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14.5, color: x.got ? '#7D776E' : '#181922', textDecoration: x.got ? 'line-through' : 'none', cursor: 'pointer' }}
+                >
+                  {x.name}
+                </div>
+              )}
               <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: tint[x.by] || '#EAEEFF', color: colorFor(x.by) || '#3B5BFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, fontFamily: grotesk }}>{initialFor(x.by) || '?'}</div>
               <DeleteBtn onClick={() => run(api.delShop(x.id), 'Removed')} />
             </div>
@@ -175,11 +203,13 @@ function Lists() {
 }
 
 // ---------------- GOALS ----------------
-function Goals() {
+function Goals({ nav }: { nav: Nav }) {
   const { state, run } = useStore();
   if (!state) return null;
   const family = state.goals.filter((g) => g.kind === 'Family');
   const personal = state.goals.filter((g) => g.kind !== 'Family');
+  const edit = (g: (typeof family)[number]) =>
+    nav.openForm('goal', { editId: g.id, title: g.title, kind: g.kind === 'Family' ? 'family' : 'personal', target: g.target ? String(g.target) : '', amount: '' });
 
   return (
     <div>
@@ -191,8 +221,17 @@ function Goals() {
               <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: g.color }}>{g.tag}</span>
               <span style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 15, color: g.color }}>{g.pct}%</span>
             </div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{g.title}</div>
-            <div style={{ fontSize: 12.5, color: '#6F6C67', margin: '2px 0 13px' }}>{g.sub}</div>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`Edit goal "${g.title}"`}
+              onClick={() => edit(g)}
+              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); edit(g); } }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 16 }}>{g.title}</div>
+              <div style={{ fontSize: 12.5, color: '#6F6C67', margin: '2px 0 13px' }}>{g.sub}</div>
+            </div>
             <div style={{ height: 8, borderRadius: 100, background: '#EBE7DF', overflow: 'hidden', marginBottom: 13 }}>
               <div style={{ height: '100%', width: `${g.pct}%`, borderRadius: 100, background: g.color }} />
             </div>
@@ -209,7 +248,14 @@ function Goals() {
         {personal.map((g) => (
           <div key={g.id} style={{ background: '#fff', borderRadius: 20, padding: 15, boxShadow: '0 1px 2px rgba(24,25,34,0.04), 0 12px 30px -16px rgba(24,25,34,0.16)', display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ flexShrink: 0, width: 48, height: 48, borderRadius: 15, background: g.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: grotesk, fontWeight: 700, fontSize: 14 }}>{g.pct}%</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`Edit goal "${g.title}"`}
+              onClick={() => edit(g)}
+              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); edit(g); } }}
+              style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+            >
               <div style={{ fontSize: 11, fontWeight: 700, color: g.color }}>{g.kind}</div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>{g.title}</div>
               <div style={{ fontSize: 12, color: '#6F6C67' }}>{g.sub}</div>
@@ -223,7 +269,7 @@ function Goals() {
 }
 
 // ---------------- shared ----------------
-const inlineInput: React.CSSProperties = { flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 14, padding: '13px 16px', fontSize: 14.5, color: '#181922', outline: 'none' };
+const inlineInput: React.CSSProperties = { flex: 1, border: '1.5px solid #E8E3DB', background: '#fff', borderRadius: 14, padding: '13px 16px', fontSize: 16, color: '#181922', outline: 'none' };
 const checkbox: React.CSSProperties = { flexShrink: 0, width: 26, height: 26, borderRadius: '50%', border: '2px solid #DED9D0', background: '#fff', cursor: 'pointer' };
 const iconBtn: React.CSSProperties = { flexShrink: 0, width: 36, height: 36, borderRadius: 11, border: 'none', background: '#EFEBE3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
