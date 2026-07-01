@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { query } from './db.js';
 import { requireAuth, type AuthedRequest } from './auth.js';
 import { vapidPublicKey, saveSubscription, removeSubscription, pushToHousehold, pushToSub } from './push.js';
-import { sastToday, formatDateLabel, isoRe } from './dates.js';
+import { sastToday, formatDateLabel, relativeTime, isoRe } from './dates.js';
 import { sendEmail } from './mailer.js';
 import { inviteEmail } from './emailTemplates.js';
 
@@ -31,8 +31,8 @@ async function assembleState(householdId: string, meMemberId?: string) {
     query(`SELECT id, name, spent, budget_limit, color FROM budget WHERE household_id=$1 ORDER BY sort`, [householdId]),
     query(`SELECT id, name, saved, target, color FROM savings WHERE household_id=$1 ORDER BY sort`, [householdId]),
     query(`SELECT id, txt, detail, amount, dir, who, settled FROM settle WHERE household_id=$1 ORDER BY sort`, [householdId]),
-    query(`SELECT id, illo, color, title, body, time_label, unread FROM notifications WHERE household_id=$1 ORDER BY created_at DESC`, [householdId]),
-    query(`SELECT id, who, color, initial, txt, time_label FROM feed WHERE household_id=$1 ORDER BY created_at DESC`, [householdId]),
+    query(`SELECT id, illo, color, title, body, time_label, unread, created_at FROM notifications WHERE household_id=$1 ORDER BY created_at DESC`, [householdId]),
+    query(`SELECT id, who, color, initial, txt, time_label, created_at FROM feed WHERE household_id=$1 ORDER BY created_at DESC`, [householdId]),
   ]);
 
   const household = hh.rows[0] || { name: 'My Home', settings: {} };
@@ -63,8 +63,9 @@ async function assembleState(householdId: string, meMemberId?: string) {
     budget: budget.rows.map((c) => ({ id: c.id, name: c.name, spent: num(c.spent), limit: num(c.budget_limit), color: c.color })),
     savings: savings.rows.map((v) => ({ ...v, saved: num(v.saved), target: num(v.target) })),
     settle: settle.rows,
-    notifications: notifications.rows,
-    feed: feed.rows,
+    // time_label is derived live from created_at so items never freeze at "just now".
+    notifications: notifications.rows.map((n) => ({ ...n, time_label: relativeTime(n.created_at) })),
+    feed: feed.rows.map((f) => ({ ...f, time_label: relativeTime(f.created_at) })),
   };
 }
 

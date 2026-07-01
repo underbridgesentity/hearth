@@ -27,3 +27,21 @@ export function formatDateLabel(iso: string | null | undefined): string {
 }
 
 export const isoRe = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A timestamp → a live relative label: "just now" / "5m ago" / "3h ago" /
+ *  "Yesterday" / "4d ago" / "12 Jul". Derived from created_at so it never goes stale. */
+export function relativeTime(ts: string | Date | null | undefined): string {
+  if (!ts) return '';
+  const then = new Date(ts).getTime();
+  if (Number.isNaN(then)) return '';
+  const diffMin = Math.floor((Date.now() - then) / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const h = Math.floor(diffMin / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return 'Yesterday';
+  if (d < 7) return `${d}d ago`;
+  const dt = new Date(then + SAST_OFFSET_MS);
+  return `${dt.getUTCDate()} ${MON[dt.getUTCMonth()]}`;
+}
