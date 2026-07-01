@@ -17,22 +17,28 @@ export default function Calendar({ nav }: { nav: Nav }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDow = new Date(year, month, 1).getDay();
 
-  // dots: map each important date to its day-of-month + member colour
+  // dots: mark days in the DISPLAYED month that have an event (real dates only,
+  // so a past event from another month never paints this month's grid)
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
   const dotMap: Record<number, string> = {};
   for (const e of state.events) {
-    let d: number | null = null;
-    if (e.day === 'today') d = todayDate;
-    else {
-      const m = e.date_label.match(/\d+/);
-      if (m) d = parseInt(m[0], 10);
+    if (e.event_date?.startsWith(monthPrefix)) {
+      dotMap[Number(e.event_date.slice(8, 10))] = e.color;
+    } else if (!e.event_date && e.day === 'today') {
+      dotMap[todayDate] = e.color;
     }
-    if (d && d >= 1 && d <= daysInMonth) dotMap[d] = e.color;
   }
 
   const cells: { key: string; label: number; today: boolean; dot: string; faded: boolean }[] = [];
   for (let i = 0; i < firstDow; i++) cells.push({ key: 'p' + i, label: 0, today: false, dot: 'transparent', faded: true });
   for (let d = 1; d <= daysInMonth; d++) cells.push({ key: 'd' + d, label: d, today: d === todayDate, dot: dotMap[d] || 'transparent', faded: false });
   while (cells.length % 7 !== 0) cells.push({ key: 'n' + cells.length, label: 0, today: false, dot: 'transparent', faded: true });
+
+  // Split into what's coming (undated or today/future) and what's been - past
+  // events stay browsable in their own section, newest first.
+  const todayIso = now.toLocaleDateString('en-CA'); // YYYY-MM-DD, local
+  const upcoming = state.events.filter((e) => !e.event_date || e.event_date >= todayIso);
+  const past = state.events.filter((e) => e.event_date && e.event_date < todayIso).reverse();
 
   return (
     <div>
@@ -60,8 +66,11 @@ export default function Calendar({ nav }: { nav: Nav }) {
       </div>
 
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 12px' }}>Important dates</div>
+      {upcoming.length === 0 && past.length === 0 && (
+        <div style={{ fontSize: 13, color: '#6F6C67', margin: '0 2px 12px' }}>No dates yet - add birthdays, appointments and school events below.</div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {state.events.map((e) => (
+        {upcoming.map((e) => (
           <div
             key={e.id}
             role="button"
@@ -87,6 +96,33 @@ export default function Calendar({ nav }: { nav: Nav }) {
       </div>
 
       <button onClick={() => nav.openForm('event')} style={dashedAdd}>+ Add an important date</button>
+
+      {past.length > 0 && (
+        <>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7D776E', textTransform: 'uppercase', letterSpacing: '.05em', margin: '26px 2px 10px' }}>Past</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {past.map((e) => (
+              <div
+                key={e.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Edit past event ${e.title}`}
+                onClick={() => nav.openForm('event', { editId: e.id, title: e.title, date: e.event_date || '', time: e.event_time || '', who: e.assignee_ids || [] })}
+                onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); nav.openForm('event', { editId: e.id, title: e.title, date: e.event_date || '', time: e.event_time || '', who: e.assignee_ids || [] }); } }}
+                className="tap"
+                style={{ display: 'flex', gap: 13, padding: 14, background: '#EFEBE3', borderRadius: 18, alignItems: 'center', cursor: 'pointer', opacity: 0.75 }}
+              >
+                <Icon name={e.illo} color={e.color} size={40} radius={12} glyph={21} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.25 }}>{e.title}</div>
+                  <div style={{ fontSize: 12, color: '#6F6C67', marginTop: 2 }}>{e.date_label} · {e.loc}</div>
+                </div>
+                <div style={{ flexShrink: 0, fontFamily: grotesk, fontWeight: 600, fontSize: 12.5, color: '#6F6C67' }}>{e.time}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -39,7 +39,7 @@ async function assembleState(householdId: string, meMemberId?: string) {
     query(`SELECT id, name, saved, target, color FROM savings WHERE household_id=$1 ORDER BY sort`, [householdId]),
     query(`SELECT id, txt, detail, amount, dir, who, settled FROM settle WHERE household_id=$1 ORDER BY sort`, [householdId]),
     query(`SELECT id, illo, color, title, body, time_label, unread, created_at FROM notifications WHERE household_id=$1 ORDER BY created_at DESC`, [householdId]),
-    query(`SELECT id, who, color, initial, txt, time_label, created_at FROM feed WHERE household_id=$1 ORDER BY created_at DESC`, [householdId]),
+    query(`SELECT id, who, color, initial, txt, time_label, created_at FROM feed WHERE household_id=$1 ORDER BY created_at DESC LIMIT 30`, [householdId]),
   ]);
 
   const household = hh.rows[0] || { name: 'My Home', settings: {} };
@@ -164,6 +164,8 @@ dataRouter.post('/events', async (req: AuthedRequest, res) => {
      'For ' + (ms.length ? joinNames(ms.map((m) => m.name)) : 'the family'),
      ms[0]?.color || '#3B5BFF', JSON.stringify(ms.map((m) => m.id))]
   );
+  const me = await meMember(hh(req), req.memberId);
+  await addFeed(hh(req), me.name, me.color, me.initial, `added "${b.data.title}" to the calendar`);
   await sendState(req, res);
 });
 dataRouter.patch('/events/:id', async (req: AuthedRequest, res) => {
@@ -196,6 +198,7 @@ dataRouter.post('/tasks', async (req: AuthedRequest, res) => {
      VALUES ($1,$2,$3,$4,'Today','today',false,$5,$6,${nextSort('tasks')})`,
     [hh(req), b.data.title, me.name, me.color, b.data.type || 'Task', JSON.stringify(ms.map((m) => m.id))]
   );
+  await addFeed(hh(req), me.name, me.color, me.initial, `added a ${b.data.type === 'Reminder' ? 'reminder' : 'to-do'}: "${b.data.title}"`);
   await sendState(req, res);
 });
 // One PATCH, two shapes: `{done}` toggles completion (checkboxes); a body with
@@ -269,6 +272,7 @@ dataRouter.post('/goals', async (req: AuthedRequest, res) => {
      VALUES ($1,$2,$3,$4,$5,0,'#3B5BFF',$6,${nextSort('goals')})`,
     [hh(req), kind, fam ? 'Goal' : 'Personal', b.data.title, sub, target]
   );
+  await addFeed(hh(req), me.name, me.color, me.initial, `set a ${fam ? 'family ' : ''}goal: "${b.data.title}"`);
   await sendState(req, res);
 });
 // One PATCH, two shapes: `{}` logs a quick progress nudge; a body with `title`
@@ -300,6 +304,10 @@ dataRouter.patch('/goals/:id', async (req: AuthedRequest, res) => {
       `UPDATE goals SET title=$1, kind=$2, tag=$3, target=$4, pct=$5, sub=$6 WHERE id=$7 AND household_id=$8`,
       [b.data.title, fam ? 'Family' : me.name, fam ? 'Goal' : 'Personal', target, pct, goalSub(pct, target), req.params.id, hh(req)]
     );
+    const added = Number(b.data.addAmount) || 0;
+    if (added > 0) {
+      await addFeed(hh(req), me.name, me.color, me.initial, `added R${added.toLocaleString('en-ZA')} to "${b.data.title}"`);
+    }
     return sendState(req, res);
   }
   const pct = Math.min(100, num(g.pct) + 8);
@@ -328,6 +336,8 @@ dataRouter.post('/bills', async (req: AuthedRequest, res) => {
      ms.length ? joinNames(ms.map((m) => m.name)) : 'Shared',
      ms[0]?.color || '#3B5BFF', JSON.stringify(ms.map((m) => m.id))]
   );
+  const me = await meMember(hh(req), req.memberId);
+  await addFeed(hh(req), me.name, me.color, me.initial, `added the bill "${b.data.name}"`);
   await sendState(req, res);
 });
 // One PATCH, two shapes: `{status}` marks paid/unpaid (and the cron's overdue
@@ -352,6 +362,11 @@ dataRouter.patch('/bills/:id', async (req: AuthedRequest, res) => {
   const parsed = z.enum(['paid', 'unpaid', 'overdue']).safeParse(req.body?.status);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid bill status' });
   await query(`UPDATE bills SET status=$1 WHERE id=$2 AND household_id=$3`, [parsed.data, req.params.id, hh(req)]);
+  if (parsed.data === 'paid') {
+    const bill = (await query(`SELECT name FROM bills WHERE id=$1 AND household_id=$2`, [req.params.id, hh(req)])).rows[0];
+    const me = await meMember(hh(req), req.memberId);
+    if (bill) await addFeed(hh(req), me.name, me.color, me.initial, `marked "${bill.name}" as paid`);
+  }
   await sendState(req, res);
 });
 dataRouter.delete('/bills/:id', async (req: AuthedRequest, res) => {
@@ -371,6 +386,8 @@ dataRouter.post('/budget', async (req: AuthedRequest, res) => {
     `INSERT INTO budget (household_id, name, spent, budget_limit, color, sort) VALUES ($1,$2,$3,$4,$5,${nextSort('budget')})`,
     [hh(req), b.data.name, Number(b.data.spent) || 0, Number(b.data.limit) || 0, PALETTE[count % PALETTE.length]]
   );
+  const me = await meMember(hh(req), req.memberId);
+  await addFeed(hh(req), me.name, me.color, me.initial, `added a budget for ${b.data.name}`);
   await sendState(req, res);
 });
 dataRouter.patch('/budget/:id', async (req: AuthedRequest, res) => {
@@ -396,6 +413,8 @@ dataRouter.post('/savings', async (req: AuthedRequest, res) => {
     `INSERT INTO savings (household_id, name, saved, target, color, sort) VALUES ($1,$2,$3,$4,$5,${nextSort('savings')})`,
     [hh(req), b.data.name, Number(b.data.saved) || 0, Number(b.data.target) || 0, PALETTE[(count + 1) % PALETTE.length]]
   );
+  const me = await meMember(hh(req), req.memberId);
+  await addFeed(hh(req), me.name, me.color, me.initial, `started saving for "${b.data.name}"`);
   await sendState(req, res);
 });
 dataRouter.patch('/savings/:id', async (req: AuthedRequest, res) => {
@@ -431,6 +450,8 @@ dataRouter.post('/settle', async (req: AuthedRequest, res) => {
      VALUES ($1,$2,$3,$4,$5,$6,false,${nextSort('settle')})`,
     [hh(req), txt, (b.data.note || '').trim(), 'R' + amt.toLocaleString('en-ZA'), b.data.dir, m.name]
   );
+  const me = await meMember(hh(req), req.memberId);
+  await addFeed(hh(req), me.name, me.color, me.initial, `updated who owes who`);
   await sendState(req, res);
 });
 
@@ -444,6 +465,8 @@ dataRouter.post('/members', async (req: AuthedRequest, res) => {
     `INSERT INTO members (household_id, name, role, initial, color, is_you, sort) VALUES ($1,$2,$3,$4,$5,false,${nextSort('members')})`,
     [hh(req), b.data.name, b.data.role || 'Family', b.data.name.charAt(0).toUpperCase(), palette[count % palette.length]]
   );
+  const me = await meMember(hh(req), req.memberId);
+  await addFeed(hh(req), me.name, me.color, me.initial, `added ${b.data.name} to the family`);
   await sendState(req, res);
 });
 // Edit a member's name / role / colour. Display text snapshotted on old events

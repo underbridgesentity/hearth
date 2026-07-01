@@ -17,6 +17,9 @@ export default function Money({ nav }: { nav: Nav }) {
 
   const activeSettle = state.settle.filter((s) => !s.settled);
   const net = activeSettle.reduce((a, s) => a + (s.dir === 'out' ? parseAmt(s.amount) : -parseAmt(s.amount)), 0);
+  // Open bills stay front and centre; paid ones drop into their own history section.
+  const openBills = state.bills.filter((b) => b.status !== 'paid');
+  const paidBills = state.bills.filter((b) => b.status === 'paid');
 
   return (
     <div>
@@ -38,33 +41,21 @@ export default function Money({ nav }: { nav: Nav }) {
 
       {/* Bills */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 12px' }}>Bills</div>
+      {openBills.length === 0 && paidBills.length === 0 && (
+        <div style={{ fontSize: 13, color: '#6F6C67', margin: '0 2px 12px' }}>Track rent, utilities and subscriptions with real due dates.</div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-        {state.bills.map((b) => (
-          <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 14px', background: '#fff', borderRadius: 18, boxShadow: '0 2px 8px rgba(16,20,38,0.04)' }}>
-            <Icon name={b.illo} color={b.color} size={42} radius={13} glyph={22} />
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label={`Edit ${b.name}`}
-              onClick={() => nav.openForm('bill', { editId: b.id, name: b.name, amount: String(b.amount || ''), due: b.due_date || '', payer: b.assignee_ids || [] })}
-              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); nav.openForm('bill', { editId: b.id, name: b.name, amount: String(b.amount || ''), due: b.due_date || '', payer: b.assignee_ids || [] }); } }}
-              style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
-            >
-              <div style={{ fontWeight: 700, fontSize: 14.5 }}>{b.name}</div>
-              <div style={{ fontSize: 11.5, color: '#6F6C67', marginTop: 1 }}>{b.payer} · {b.cat} · due {b.due}</div>
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-              <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 15 }}>{money(b.amount)}</div>
-              {b.status !== 'paid' ? (
-                <button onClick={() => run(api.payBill(b.id), 'Marked as paid')} style={{ border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 11, padding: '5px 12px', borderRadius: 100, cursor: 'pointer' }}>Mark paid</button>
-              ) : (
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#16C098', background: 'rgba(22,192,152,0.12)', padding: '3px 10px', borderRadius: 100 }}>Paid</span>
-              )}
-            </div>
-          </div>
-        ))}
+        {openBills.map((b) => <BillRow key={b.id} b={b} nav={nav} run={run} />)}
       </div>
       <button onClick={() => nav.openForm('bill')} style={dashedAdd}>+ Add a bill</button>
+      {paidBills.length > 0 && (
+        <>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7D776E', textTransform: 'uppercase', letterSpacing: '.05em', margin: '18px 2px 10px' }}>Paid</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {paidBills.map((b) => <BillRow key={b.id} b={b} nav={nav} run={run} muted />)}
+          </div>
+        </>
+      )}
 
       {/* Budget */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '26px 2px 12px' }}>Monthly budget</div>
@@ -163,3 +154,31 @@ const dashedAdd: React.CSSProperties = {
   width: '100%', border: '1.5px dashed #D2CCC1', background: 'transparent', color: '#6B6459',
   fontWeight: 700, fontSize: 14, padding: 15, borderRadius: 16, cursor: 'pointer',
 };
+
+function BillRow({ b, nav, run, muted }: { b: import('../lib/types').Bill; nav: Nav; run: (p: Promise<unknown>, msg?: string) => void; muted?: boolean }) {
+  const edit = () => nav.openForm('bill', { editId: b.id, name: b.name, amount: String(b.amount || ''), due: b.due_date || '', payer: b.assignee_ids || [] });
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 14px', background: muted ? '#EFEBE3' : '#fff', borderRadius: 18, boxShadow: muted ? 'none' : '0 2px 8px rgba(16,20,38,0.04)', opacity: muted ? 0.8 : 1 }}>
+      <Icon name={b.illo} color={b.color} size={42} radius={13} glyph={22} />
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`Edit ${b.name}`}
+        onClick={edit}
+        onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); edit(); } }}
+        style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+      >
+        <div style={{ fontWeight: 700, fontSize: 14.5 }}>{b.name}</div>
+        <div style={{ fontSize: 11.5, color: '#6F6C67', marginTop: 1 }}>{b.payer} · {b.cat} · due {b.due}</div>
+      </div>
+      <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+        <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 15 }}>{money(b.amount)}</div>
+        {b.status !== 'paid' ? (
+          <button onClick={() => run(api.payBill(b.id), 'Marked as paid')} style={{ border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 11, padding: '5px 12px', borderRadius: 100, cursor: 'pointer' }}>Mark paid</button>
+        ) : (
+          <span style={{ fontSize: 10.5, fontWeight: 700, color: '#16C098', background: 'rgba(22,192,152,0.12)', padding: '3px 10px', borderRadius: 100 }}>Paid</span>
+        )}
+      </div>
+    </div>
+  );
+}
