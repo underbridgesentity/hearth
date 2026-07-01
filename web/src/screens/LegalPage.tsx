@@ -1,6 +1,6 @@
 const grotesk = "'Bricolage Grotesque', sans-serif";
 const SUPPORT_EMAIL = 'info@underbridges.co.za';
-const OPERATOR = 'Underbridges';
+const OPERATOR = 'Under Bridges';
 const UPDATED = '1 July 2026';
 
 function Wrap({ children }: { children: React.ReactNode }) {
@@ -71,9 +71,9 @@ export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'suppo
         <p style={meta}>Last updated {UPDATED}</p>
 
         <p style={p}>
-          These Terms of Service (&ldquo;Terms&rdquo;) are a binding agreement between you and {OPERATOR} (&ldquo;{OPERATOR}&rdquo;,
-          &ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;), the operator of the Croft application and website (together, the
-          &ldquo;Service&rdquo;). By creating an account, accessing, or using the Service, you agree to these Terms and to our{' '}
+          These Terms of Service (&ldquo;Terms&rdquo;) are a binding agreement between you and {OPERATOR}, trading as Croft
+          (&ldquo;{OPERATOR}&rdquo;, &ldquo;Croft&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;), the operator of the
+          Croft application and website (together, the &ldquo;Service&rdquo;). By creating an account, accessing, or using the Service, you agree to these Terms and to our{' '}
           <a href="/privacy" style={{ color: '#3B5BFF', fontWeight: 700 }}>Privacy Policy</a>. If you do not agree, do not use the Service.
         </p>
 
@@ -224,8 +224,9 @@ export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'suppo
       <p style={meta}>Last updated {UPDATED}</p>
 
       <p style={p}>
-        This Privacy Policy explains how {OPERATOR} (&ldquo;{OPERATOR}&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;), the operator of
-        Croft (the &ldquo;Service&rdquo;), collects, uses, shares and protects your personal information, and the rights you have.
+        This Privacy Policy explains how {OPERATOR}, trading as Croft (&ldquo;{OPERATOR}&rdquo;, &ldquo;Croft&rdquo;,
+        &ldquo;we&rdquo;, &ldquo;us&rdquo;), the operator of Croft (the &ldquo;Service&rdquo;), collects, uses, shares and protects
+        your personal information, and the rights you have.
         We act as the responsible party (data controller) for the personal information described here. We aim to comply with the
         Protection of Personal Information Act, 2013 (POPIA) in South Africa and, where it applies, the EU/UK General Data
         Protection Regulation (GDPR). Contact us any time at {mail}.
