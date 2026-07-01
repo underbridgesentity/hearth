@@ -90,21 +90,21 @@ export default function App() {
   }
 
   return (
-    <Frame>
+    <Frame wide>
       <Shell onSignedOut={() => setEntered(false)} />
       {user && user.onboarded === false && <WelcomeTour />}
     </Frame>
   );
 }
 
-export function Frame({ children }: { children: React.ReactNode }) {
+export function Frame({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
   return (
     <div
       style={{
         position: 'relative',
         width: '100%',
         height: '100dvh',
-        maxWidth: 440,
+        maxWidth: wide ? '100%' : 440,
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',

@@ -90,9 +90,11 @@ export default function WelcomeTour() {
         background: '#F3F5FB',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
         padding: '16px 24px calc(24px + env(safe-area-inset-bottom))',
       }}
     >
+     <div style={{ width: '100%', maxWidth: 440, flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Skip */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', height: 32 }}>
         {!last && (
@@ -177,6 +179,7 @@ export default function WelcomeTour() {
       >
         Back
       </button>
+     </div>
     </div>
   );
 }
