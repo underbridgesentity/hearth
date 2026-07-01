@@ -25,6 +25,8 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
   const [pwBusy, setPwBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [delBusy, setDelBusy] = useState(false);
+  const [cal, setCal] = useState<{ url: string; webcal: string } | null>(null);
+  const [calBusy, setCalBusy] = useState(false);
   if (!state) return null;
   const s: Settings = state.household.settings || {};
 
@@ -41,6 +43,25 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
       flash(e?.message || 'Could not update password');
     } finally {
       setPwBusy(false);
+    }
+  };
+  const loadCal = async () => {
+    setCalBusy(true);
+    try {
+      setCal(await api.calendarFeed());
+    } catch (e: any) {
+      flash(e?.message || 'Could not load calendar link');
+    } finally {
+      setCalBusy(false);
+    }
+  };
+  const copyCal = async () => {
+    if (!cal) return;
+    try {
+      await navigator.clipboard.writeText(cal.url);
+      flash('Calendar link copied ✓');
+    } catch {
+      flash('Could not copy — long-press to copy');
     }
   };
   const doDelete = async () => {
@@ -103,7 +124,6 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
   };
 
   const onOff = (key: keyof Settings) => (s[key] ? 'On' : 'Off');
-  const conn = (key: keyof Settings) => (s[key] ? 'Connected' : 'Connect');
   const toggle = (key: keyof Settings, msg?: string) => run(api.setSetting(key, !s[key]), msg);
 
   const togglePush = async () => {
@@ -120,9 +140,6 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
   const notifRows = [
     { key: 'push' as const, illo: 'bell', label: 'Push notifications', detail: onOff('push'), good: !!s.push },
     { key: 'email' as const, illo: 'mail', label: 'Email reminders', detail: onOff('email'), good: !!s.email },
-    { key: 'appleCal' as const, illo: 'calendar', label: 'Apple Calendar', detail: conn('appleCal'), good: !!s.appleCal },
-    { key: 'googleCal' as const, illo: 'calendar', iconColor: '#FF6B5C', label: 'Google Calendar', detail: conn('googleCal'), good: !!s.googleCal },
-    { key: 'iphoneReminders' as const, illo: 'alarm', label: 'iPhone Reminders', detail: onOff('iphoneReminders'), good: !!s.iphoneReminders },
   ];
 
   return (
@@ -193,11 +210,31 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
         <div style={{ height: 4 }} />
       </div>
 
+      {/* calendar subscription */}
+      <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 4px' }}>Calendar</div>
+      <div style={{ fontSize: 12.5, color: '#717A90', margin: '0 2px 12px' }}>See Croft events in Apple or Google Calendar</div>
+      <div style={{ background: '#fff', borderRadius: 22, padding: 16, boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 26 }}>
+        {cal ? (
+          <>
+            <div style={{ fontSize: 13, color: '#717A90', lineHeight: 1.5, marginBottom: 12 }}>Subscribe once and your family’s events stay in sync in your calendar app — new events appear automatically.</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <a href={cal.webcal} style={{ flex: 1, minWidth: 150, textAlign: 'center', textDecoration: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '11px', borderRadius: 12 }}>Add to Apple Calendar</a>
+              <button onClick={copyCal} style={{ flex: 1, minWidth: 150, border: '1.5px solid #E4E9F2', background: '#fff', color: '#101426', fontWeight: 700, fontSize: 13.5, padding: '11px', borderRadius: 12, cursor: 'pointer' }}>Copy link for Google</button>
+            </div>
+            <div style={{ fontSize: 11.5, color: '#9AA3B5', marginTop: 10, lineHeight: 1.45 }}>Google Calendar → “Other calendars” + → “From URL” → paste the copied link.</div>
+          </>
+        ) : (
+          <button onClick={loadCal} disabled={calBusy} style={{ width: '100%', border: '1.5px dashed #CBD4E4', background: 'transparent', color: '#5B6B8C', fontWeight: 700, fontSize: 14, padding: 14, borderRadius: 14, cursor: 'pointer', opacity: calBusy ? 0.6 : 1 }}>
+            {calBusy ? 'Getting your link…' : 'Subscribe in your calendar'}
+          </button>
+        )}
+      </div>
+
       {/* account & security */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 12px' }}>Account & security</div>
       <div style={{ background: '#fff', borderRadius: 22, padding: '4px 16px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 12 }}>
         <SettingRow illo="lock" label="Change password" detail="" onClick={() => setPwOpen((v) => !v)} />
-        <SettingRow illo="cloud" label="Backup & sync" detail={onOff('backup')} good={!!s.backup} onClick={() => toggle('backup', 'Updated ✓')} />
+        <SettingRow illo="cloud" label="Auto-backup & sync" detail="On" good onClick={() => flash('Your data backs up and syncs automatically ✓')} />
         <SettingRow illo="shield" label="Face ID & passcode" detail={onOff('faceId')} good={!!s.faceId} onClick={() => toggle('faceId', 'Updated ✓')} />
         <div style={{ height: 4 }} />
       </div>

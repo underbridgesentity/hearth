@@ -49,6 +49,7 @@ export const api = {
   deleteAccount: () => req<{ ok: true }>('/auth/delete-account', { method: 'POST' }),
 
   // ---- push ----
+  calendarFeed: () => req<{ url: string; webcal: string }>('/calendar-feed'),
   pushKey: () => req<{ publicKey: string }>('/push/key'),
   pushSubscribe: (sub: unknown) => req<{ ok: true }>('/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
   pushUnsubscribe: (endpoint: string) => req<{ ok: true }>('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),

@@ -331,3 +331,16 @@ dataRouter.patch('/household', async (req: AuthedRequest, res) => {
   if (name) await query(`UPDATE households SET name=$1 WHERE id=$2`, [name, hh(req)]);
   await sendState(req, res);
 });
+
+// Subscribable calendar (ICS) feed URL for this household — creates the token
+// on first use. Add it in Apple Calendar (webcal) or Google Calendar (from URL).
+dataRouter.get('/calendar-feed', async (req: AuthedRequest, res) => {
+  const row = (await query(`SELECT calendar_token FROM households WHERE id=$1`, [hh(req)])).rows[0];
+  let token = row?.calendar_token as string | undefined;
+  if (!token) {
+    token = crypto.randomBytes(18).toString('base64url');
+    await query(`UPDATE households SET calendar_token=$1 WHERE id=$2`, [token, hh(req)]);
+  }
+  const url = `${APP_URL}/api/calendar/${token}.ics`;
+  res.json({ url, webcal: url.replace(/^https?:\/\//, 'webcal://') });
+});

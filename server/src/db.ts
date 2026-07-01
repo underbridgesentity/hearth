@@ -91,6 +91,9 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS event_date DATE;
 ALTER TABLE events ADD COLUMN IF NOT EXISTS event_time TEXT;
 ALTER TABLE bills  ADD COLUMN IF NOT EXISTS due_date DATE;
 
+-- Unguessable token for the household's subscribable calendar (ICS) feed.
+ALTER TABLE households ADD COLUMN IF NOT EXISTS calendar_token TEXT UNIQUE;
+
 CREATE TABLE IF NOT EXISTS password_resets (
   token      TEXT PRIMARY KEY,
   user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
