@@ -86,6 +86,11 @@ CREATE TABLE IF NOT EXISTS users (
 -- Whether the user has seen the first-run welcome walkthrough (per-user).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded BOOLEAN NOT NULL DEFAULT false;
 
+-- Real dates (source of truth for reminders); display labels are derived from these.
+ALTER TABLE events ADD COLUMN IF NOT EXISTS event_date DATE;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS event_time TEXT;
+ALTER TABLE bills  ADD COLUMN IF NOT EXISTS due_date DATE;
+
 CREATE TABLE IF NOT EXISTS password_resets (
   token      TEXT PRIMARY KEY,
   user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

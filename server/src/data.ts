@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { query } from './db.js';
 import { requireAuth, type AuthedRequest } from './auth.js';
 import { vapidPublicKey, saveSubscription, removeSubscription, pushToHousehold, pushToSub } from './push.js';
+import { sastToday, formatDateLabel, isoRe } from './dates.js';
 
 export const dataRouter = Router();
 dataRouter.use(requireAuth);
@@ -18,11 +19,11 @@ async function assembleState(householdId: string, meMemberId?: string) {
   ] = await Promise.all([
     query(`SELECT name, settings FROM households WHERE id = $1`, [householdId]),
     query(`SELECT id, name, role, initial, color, is_you, sort FROM members WHERE household_id=$1 ORDER BY sort, created_at`, [householdId]),
-    query(`SELECT id, title, time, ampm, day, date_label, loc, color, illo FROM events WHERE household_id=$1 ORDER BY sort, created_at`, [householdId]),
+    query(`SELECT id, title, time, ampm, day, date_label, loc, color, illo, to_char(event_date,'YYYY-MM-DD') AS event_date, event_time FROM events WHERE household_id=$1 ORDER BY event_date NULLS LAST, sort, created_at`, [householdId]),
     query(`SELECT id, title, from_name, from_color, due, due_key, done, type FROM tasks WHERE household_id=$1 ORDER BY sort, created_at`, [householdId]),
     query(`SELECT id, name, by_member, got FROM shopping WHERE household_id=$1 ORDER BY sort, created_at`, [householdId]),
     query(`SELECT id, kind, tag, title, sub, pct, color, target FROM goals WHERE household_id=$1 ORDER BY sort, created_at`, [householdId]),
-    query(`SELECT id, name, cat, amount, due, status, payer, color, illo FROM bills WHERE household_id=$1 ORDER BY sort, created_at`, [householdId]),
+    query(`SELECT id, name, cat, amount, due, status, payer, color, illo, to_char(due_date,'YYYY-MM-DD') AS due_date FROM bills WHERE household_id=$1 ORDER BY due_date NULLS LAST, sort, created_at`, [householdId]),
     query(`SELECT id, name, spent, budget_limit, color FROM budget WHERE household_id=$1 ORDER BY sort`, [householdId]),
     query(`SELECT id, name, saved, target, color FROM savings WHERE household_id=$1 ORDER BY sort`, [householdId]),
     query(`SELECT id, txt, detail, amount, dir, who, settled FROM settle WHERE household_id=$1 ORDER BY sort`, [householdId]),
@@ -31,17 +32,30 @@ async function assembleState(householdId: string, meMemberId?: string) {
   ]);
 
   const household = hh.rows[0] || { name: 'My Home', settings: {} };
+  const today = sastToday();
   return {
     household: { name: household.name, settings: household.settings || {} },
     members: members.rows.map((m) => ({
       id: m.id, name: m.name, role: m.role, initial: m.initial, color: m.color,
       you: meMemberId ? m.id === meMemberId : m.is_you,
     })),
-    events: events.rows,
+    // Labels + "today"/"overdue" are derived from the real dates so they never go
+    // stale (a "Today" event stays correct only for the actual day).
+    events: events.rows.map((e) => ({
+      ...e,
+      date_label: e.event_date ? formatDateLabel(e.event_date) : e.date_label,
+      day: e.event_date ? (e.event_date === today ? 'today' : '') : e.day,
+      time: e.event_time || e.time,
+    })),
     tasks: tasks.rows,
     shopping: shopping.rows.map((s) => ({ id: s.id, name: s.name, by: s.by_member, got: s.got })),
     goals: goals.rows.map((g) => ({ ...g, pct: num(g.pct), target: num(g.target) })),
-    bills: bills.rows.map((b) => ({ ...b, amount: num(b.amount) })),
+    bills: bills.rows.map((b) => ({
+      ...b,
+      amount: num(b.amount),
+      due: b.due_date ? formatDateLabel(b.due_date) : b.due,
+      status: b.due_date && b.due_date < today && b.status === 'unpaid' ? 'overdue' : b.status,
+    })),
     budget: budget.rows.map((c) => ({ id: c.id, name: c.name, spent: num(c.spent), limit: num(c.budget_limit), color: c.color })),
     savings: savings.rows.map((v) => ({ ...v, saved: num(v.saved), target: num(v.target) })),
     settle: settle.rows,
@@ -86,11 +100,15 @@ dataRouter.post('/events', async (req: AuthedRequest, res) => {
   const b = z.object({ title: z.string().min(1), date: z.string().optional(), time: z.string().optional(), who: z.string().optional() }).safeParse(req.body);
   if (!b.success) return res.status(400).json({ error: 'Add a title first' });
   const m = (await query(`SELECT name, color FROM members WHERE id=$1 AND household_id=$2`, [b.data.who, hh(req)])).rows[0];
-  const time = b.data.time || 'All';
+  const iso = b.data.date && isoRe.test(b.data.date) ? b.data.date : null;
+  const timeStr = (b.data.time || '').trim();
+  const label = iso ? formatDateLabel(iso) : 'Upcoming';
+  const displayTime = timeStr || 'All';
+  const dayFlag = iso && iso === sastToday() ? 'today' : '';
   await query(
-    `INSERT INTO events (household_id, title, time, ampm, date_label, loc, color, illo, sort)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'calendar',${nextSort('events')})`,
-    [hh(req), b.data.title, time, b.data.time ? '' : 'day', b.data.date || 'Upcoming', 'For ' + (m?.name || 'the family'), m?.color || '#3B5BFF']
+    `INSERT INTO events (household_id, title, time, ampm, day, date_label, event_date, event_time, loc, color, illo, sort)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'calendar',${nextSort('events')})`,
+    [hh(req), b.data.title, displayTime, timeStr ? '' : 'day', dayFlag, label, iso, timeStr, 'For ' + (m?.name || 'the family'), m?.color || '#3B5BFF']
   );
   await sendState(req, res);
 });
@@ -177,10 +195,13 @@ dataRouter.post('/bills', async (req: AuthedRequest, res) => {
   const b = z.object({ name: z.string().min(1), amount: z.union([z.string(), z.number()]).optional(), due: z.string().optional(), payer: z.string().optional() }).safeParse(req.body);
   if (!b.success) return res.status(400).json({ error: 'Add a bill name' });
   const m = (await query(`SELECT name FROM members WHERE id=$1 AND household_id=$2`, [b.data.payer, hh(req)])).rows[0];
+  const iso = b.data.due && isoRe.test(b.data.due) ? b.data.due : null;
+  const dueLabel = iso ? formatDateLabel(iso) : (String(b.data.due || '').trim() || 'This month');
+  const status = iso && iso < sastToday() ? 'overdue' : 'unpaid';
   await query(
-    `INSERT INTO bills (household_id, name, cat, amount, due, status, payer, color, illo, sort)
-     VALUES ($1,$2,'Other',$3,$4,'unpaid',$5,'#3B5BFF','wallet',${nextSort('bills')})`,
-    [hh(req), b.data.name, Number(b.data.amount) || 0, b.data.due || 'This month', m?.name || 'Shared']
+    `INSERT INTO bills (household_id, name, cat, amount, due, due_date, status, payer, color, illo, sort)
+     VALUES ($1,$2,'Other',$3,$4,$5,$6,$7,'#3B5BFF','wallet',${nextSort('bills')})`,
+    [hh(req), b.data.name, Number(b.data.amount) || 0, dueLabel, iso, status, m?.name || 'Shared']
   );
   await sendState(req, res);
 });

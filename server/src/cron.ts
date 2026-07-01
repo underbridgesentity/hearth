@@ -1,6 +1,8 @@
 import { Router, type Request } from 'express';
 import { query } from './db.js';
 import { sendEmail, emailLayout } from './mailer.js';
+import { pushToHousehold } from './push.js';
+import { sastToday, sastPlus } from './dates.js';
 
 export const cronRouter = Router();
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -15,10 +17,18 @@ function authorized(req: Request): boolean {
   return false;
 }
 
-/** Daily digest: email each household's members a summary of what's outstanding.
- *  Skips households with nothing to report and those with email turned off. */
+const ul = (items: string[]) =>
+  items.length ? `<ul style="padding-left:18px;margin:6px 0 0">${items.map((i) => `<li>${i}</li>`).join('')}</ul>` : '';
+const rand = (n: number) => (n === 1 ? '' : 's');
+
+/** Daily run: mark overdue bills, push a morning reminder for what's happening
+ *  today, and email each household a summary (today's events, tomorrow's events,
+ *  bills due/overdue, open to-dos). Skips households with nothing to report. */
 cronRouter.get('/digest', async (req, res) => {
   if (!authorized(req)) return res.status(401).json({ error: 'unauthorized' });
+
+  const today = sastToday();
+  const tomorrow = sastPlus(1);
 
   const users = (
     await query<{ id: string; email: string; name: string; household_id: string; hh_name: string; settings: any }>(
@@ -28,45 +38,67 @@ cronRouter.get('/digest', async (req, res) => {
     )
   ).rows;
 
-  const byHh = new Map<string, { name: string; users: typeof users }>();
+  const byHh = new Map<string, { name: string; users: typeof users; emailOff: boolean }>();
   for (const u of users) {
-    if (u.settings && u.settings.email === false) continue;
-    if (!byHh.has(u.household_id)) byHh.set(u.household_id, { name: u.hh_name, users: [] });
+    if (!byHh.has(u.household_id)) {
+      byHh.set(u.household_id, { name: u.hh_name, users: [], emailOff: u.settings?.email === false });
+    }
     byHh.get(u.household_id)!.users.push(u);
   }
 
   let emailsSent = 0;
+  let pushesSent = 0;
+
   for (const [hhId, info] of byHh) {
+    // Keep bill statuses honest.
+    await query(
+      `UPDATE bills SET status='overdue' WHERE household_id=$1 AND status='unpaid' AND due_date IS NOT NULL AND due_date < $2`,
+      [hhId, today]
+    );
+
+    const eventsToday = (await query<{ title: string; event_time: string }>(
+      `SELECT title, event_time FROM events WHERE household_id=$1 AND event_date=$2 ORDER BY event_time NULLS LAST`, [hhId, today]
+    )).rows;
+    const eventsTom = (await query<{ title: string; event_time: string }>(
+      `SELECT title, event_time FROM events WHERE household_id=$1 AND event_date=$2 ORDER BY event_time NULLS LAST`, [hhId, tomorrow]
+    )).rows;
+    const billsDue = (await query<{ name: string; amount: number; status: string }>(
+      `SELECT name, amount, status FROM bills WHERE household_id=$1 AND status IN ('unpaid','overdue') AND due_date IS NOT NULL AND due_date <= $2 ORDER BY due_date`, [hhId, today]
+    )).rows;
     const openTasks = Number(
       (await query(`SELECT COUNT(*) FROM tasks WHERE household_id=$1 AND done=false`, [hhId])).rows[0].count
     );
-    const bills = (
-      await query<{ name: string; amount: number; due: string }>(
-        `SELECT name, amount, due FROM bills WHERE household_id=$1 AND status IN ('unpaid','overdue') ORDER BY sort`,
-        [hhId]
-      )
-    ).rows;
-    if (openTasks === 0 && bills.length === 0) continue;
 
-    const billsHtml = bills.length
-      ? '<ul style="padding-left:18px;margin:12px 0 0">' +
-        bills
-          .map((b) => `<li>${b.name} — R${Number(b.amount).toLocaleString('en-ZA')}${b.due ? ` (due ${b.due})` : ''}</li>`)
-          .join('') +
-        '</ul>'
-      : '';
-    const body = `You have <strong>${openTasks}</strong> open to-do${openTasks === 1 ? '' : 's'} and <strong>${bills.length}</strong> unpaid bill${bills.length === 1 ? '' : 's'} in ${info.name}.${billsHtml}`;
+    // Morning push for anything happening today.
+    if (eventsToday.length || billsDue.length) {
+      const bits: string[] = [];
+      if (eventsToday.length) bits.push(`${eventsToday.length} event${rand(eventsToday.length)}`);
+      if (billsDue.length) bits.push(`${billsDue.length} bill${rand(billsDue.length)} due`);
+      try {
+        await pushToHousehold(hhId, { title: `Today in ${info.name}`, body: bits.join(' · '), url: '/' });
+        pushesSent++;
+      } catch { /* ignore */ }
+    }
 
-    for (const u of info.users) {
-      const ok = await sendEmail({
-        to: u.email,
-        subject: `Your ${info.name} daily summary`,
-        html: emailLayout(`Good morning${u.name ? `, ${u.name.split(' ')[0]}` : ''}`, body, { label: 'Open Croft', url: APP_URL }),
-        text: `${info.name}: ${openTasks} open to-dos, ${bills.length} unpaid bills. ${APP_URL}`,
-      });
-      if (ok) emailsSent++;
+    // Email summary (respect the email-off setting).
+    const hasContent = openTasks || billsDue.length || eventsToday.length || eventsTom.length;
+    if (!info.emailOff && hasContent) {
+      const sections =
+        (eventsToday.length ? `<p style="margin:16px 0 2px;font-weight:700">Today</p>${ul(eventsToday.map((e) => `${e.event_time ? e.event_time + ' — ' : ''}${e.title}`))}` : '') +
+        (eventsTom.length ? `<p style="margin:16px 0 2px;font-weight:700">Tomorrow</p>${ul(eventsTom.map((e) => `${e.event_time ? e.event_time + ' — ' : ''}${e.title}`))}` : '') +
+        (billsDue.length ? `<p style="margin:16px 0 2px;font-weight:700">Bills due</p>${ul(billsDue.map((b) => `${b.name} — R${Number(b.amount).toLocaleString('en-ZA')} (${b.status === 'overdue' ? 'overdue' : 'due today'})`))}` : '');
+      const head = `You have <strong>${openTasks}</strong> open to-do${rand(openTasks)} in ${info.name}.`;
+      for (const u of info.users) {
+        const ok = await sendEmail({
+          to: u.email,
+          subject: `Your ${info.name} summary`,
+          html: emailLayout(`Good morning${u.name ? `, ${u.name.split(' ')[0]}` : ''}`, head + sections, { label: 'Open Croft', url: APP_URL }),
+          text: `${info.name}: ${openTasks} open to-dos, ${eventsToday.length} events today, ${billsDue.length} bills due. ${APP_URL}`,
+        });
+        if (ok) emailsSent++;
+      }
     }
   }
 
-  res.json({ ok: true, households: byHh.size, emailsSent });
+  res.json({ ok: true, households: byHh.size, emailsSent, pushesSent });
 });
