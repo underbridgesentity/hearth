@@ -19,7 +19,7 @@ function fold(line: string): string {
 }
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** GET /api/calendar/:token.ics — public, capability-URL protected. */
+/** GET /api/calendar/:token.ics - public, capability-URL protected. */
 calendarRouter.get('/:token.ics', async (req, res) => {
   const token = String((req.params as any).token || '');
   if (!token) return res.status(404).send('Not found');

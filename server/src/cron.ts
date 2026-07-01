@@ -22,8 +22,8 @@ const ul = (items: string[]) =>
 const rand = (n: number) => (n === 1 ? '' : 's');
 
 /** Daily run: mark overdue bills, push a morning reminder for what's happening
- *  today, and email each household a summary (today's events, tomorrow's events,
- *  bills due/overdue, open to-dos). Skips households with nothing to report. */
+ * today, and email each household a summary (today's events, tomorrow's events,
+ * bills due/overdue, open to-dos). Skips households with nothing to report. */
 cronRouter.get('/digest', async (req, res) => {
   if (!authorized(req)) return res.status(401).json({ error: 'unauthorized' });
 
@@ -84,9 +84,9 @@ cronRouter.get('/digest', async (req, res) => {
     const hasContent = openTasks || billsDue.length || eventsToday.length || eventsTom.length;
     if (!info.emailOff && hasContent) {
       const sections =
-        (eventsToday.length ? `<p style="margin:16px 0 2px;font-weight:700">Today</p>${ul(eventsToday.map((e) => `${e.event_time ? e.event_time + ' — ' : ''}${e.title}`))}` : '') +
-        (eventsTom.length ? `<p style="margin:16px 0 2px;font-weight:700">Tomorrow</p>${ul(eventsTom.map((e) => `${e.event_time ? e.event_time + ' — ' : ''}${e.title}`))}` : '') +
-        (billsDue.length ? `<p style="margin:16px 0 2px;font-weight:700">Bills due</p>${ul(billsDue.map((b) => `${b.name} — R${Number(b.amount).toLocaleString('en-ZA')} (${b.status === 'overdue' ? 'overdue' : 'due today'})`))}` : '');
+        (eventsToday.length ? `<p style="margin:16px 0 2px;font-weight:700">Today</p>${ul(eventsToday.map((e) => `${e.event_time ? e.event_time + ' - ' : ''}${e.title}`))}` : '') +
+        (eventsTom.length ? `<p style="margin:16px 0 2px;font-weight:700">Tomorrow</p>${ul(eventsTom.map((e) => `${e.event_time ? e.event_time + ' - ' : ''}${e.title}`))}` : '') +
+        (billsDue.length ? `<p style="margin:16px 0 2px;font-weight:700">Bills due</p>${ul(billsDue.map((b) => `${b.name} - R${Number(b.amount).toLocaleString('en-ZA')} (${b.status === 'overdue' ? 'overdue' : 'due today'})`))}` : '');
       const head = `You have <strong>${openTasks}</strong> open to-do${rand(openTasks)} in ${info.name}.`;
       for (const u of info.users) {
         const ok = await sendEmail({

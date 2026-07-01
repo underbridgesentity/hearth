@@ -49,7 +49,7 @@ export default function Money({ nav }: { nav: Nav }) {
             <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
               <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 15 }}>{money(b.amount)}</div>
               {b.status !== 'paid' ? (
-                <button onClick={() => run(api.payBill(b.id), 'Marked as paid ✓')} style={{ border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 11, padding: '5px 12px', borderRadius: 100, cursor: 'pointer' }}>Mark paid</button>
+                <button onClick={() => run(api.payBill(b.id), 'Marked as paid')} style={{ border: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 11, padding: '5px 12px', borderRadius: 100, cursor: 'pointer' }}>Mark paid</button>
               ) : (
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: '#16C098', background: 'rgba(22,192,152,0.12)', padding: '3px 10px', borderRadius: 100 }}>Paid</span>
               )}
@@ -83,7 +83,7 @@ export default function Money({ nav }: { nav: Nav }) {
       {/* Who owes who */}
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 6px' }}>Who owes who</div>
       <div style={{ fontSize: 13, color: '#717A90', margin: '0 2px 12px' }}>
-        {net > 0 ? <>Overall, you owe Naledi <b style={{ color: '#FF5C8A' }}>{money(net)}</b></> : net < 0 ? <>Overall, Naledi owes you <b style={{ color: '#16C098' }}>{money(-net)}</b></> : <>All square — nobody owes anyone.</>}
+        {net > 0 ? <>Overall, you owe Naledi <b style={{ color: '#FF5C8A' }}>{money(net)}</b></> : net < 0 ? <>Overall, Naledi owes you <b style={{ color: '#16C098' }}>{money(-net)}</b></> : <>All square - nobody owes anyone.</>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
         {activeSettle.length === 0 && <div style={{ background: '#fff', borderRadius: 18, padding: '14px 16px', boxShadow: '0 2px 8px rgba(16,20,38,0.04)', fontSize: 13.5, color: '#717A90' }}>Nothing to settle right now.</div>}
@@ -93,7 +93,7 @@ export default function Money({ nav }: { nav: Nav }) {
               <div style={{ fontWeight: 600, fontSize: 13.5, lineHeight: 1.3 }}>{s.txt}</div>
               <div style={{ fontSize: 12, color: '#717A90', marginTop: 2 }}>{s.detail} <b style={{ color: s.dir === 'in' ? '#16C098' : '#FF5C8A' }}>{s.dir === 'in' ? '+' : '−'}{s.amount}</b></div>
             </div>
-            <button onClick={() => run(s.dir === 'in' ? api.nudge(s.who) : api.settleUp(s.id), s.dir === 'in' ? `Reminder sent to ${s.who} 🔔` : 'Settled up ✓')} style={{ flexShrink: 0, border: 'none', background: '#F1F4FA', color: '#3B5BFF', fontWeight: 700, fontSize: 12.5, padding: '9px 15px', borderRadius: 100, cursor: 'pointer' }}>
+            <button onClick={() => run(s.dir === 'in' ? api.nudge(s.who) : api.settleUp(s.id), s.dir === 'in' ? `Reminder sent to ${s.who}` : 'Settled up')} style={{ flexShrink: 0, border: 'none', background: '#F1F4FA', color: '#3B5BFF', fontWeight: 700, fontSize: 12.5, padding: '9px 15px', borderRadius: 100, cursor: 'pointer' }}>
               {s.dir === 'in' ? 'Remind' : 'Settle up'}
             </button>
           </div>

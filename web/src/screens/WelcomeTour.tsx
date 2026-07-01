@@ -16,8 +16,8 @@ function tile(children: React.ReactNode) {
 const steps = (name: string): Step[] => [
   {
     color: '#3B5BFF',
-    title: `Welcome to Croft, ${name.split(' ')[0] || 'there'} 👋`,
-    body: 'One calm home for your whole family — your shared dates, plans, money and reminders, all in one place instead of scattered across group chats.',
+    title: `Welcome to Croft, ${name.split(' ')[0] || 'there'}`,
+    body: 'One calm home for your whole family - your shared dates, plans, money and reminders, all in one place instead of scattered across group chats.',
     icon: tile(
       <>
         <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" stroke="#3B5BFF" strokeWidth="1.9" strokeLinejoin="round" />
@@ -27,7 +27,7 @@ const steps = (name: string): Step[] => [
   {
     color: '#FFB020',
     title: 'One shared Calendar',
-    body: 'Appointments, birthdays, school dates and pay days — add them once and everyone in the household sees the same schedule.',
+    body: 'Appointments, birthdays, school dates and pay days - add them once and everyone in the household sees the same schedule.',
     icon: tile(
       <>
         <rect x="3" y="4.5" width="18" height="16" rx="3" stroke="#FFB020" strokeWidth="1.9" />
@@ -49,7 +49,7 @@ const steps = (name: string): Step[] => [
   {
     color: '#FF5C8A',
     title: 'Money, sorted',
-    body: 'Track bills and due dates, keep an eye on budgets and savings, and settle up who-owes-who — no more awkward maths.',
+    body: 'Track bills and due dates, keep an eye on budgets and savings, and settle up who-owes-who - no more awkward maths.',
     icon: tile(
       <>
         <rect x="2.5" y="5.5" width="19" height="14" rx="3" stroke="#FF5C8A" strokeWidth="1.9" />

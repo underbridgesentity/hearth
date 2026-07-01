@@ -43,7 +43,7 @@ export default function LockScreen() {
         </span>
         <h1 style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 22, margin: '0 0 4px' }}>{user?.name ? `Hi ${user.name.split(' ')[0]}` : 'Locked'}</h1>
         <p style={{ fontSize: 14, color: err ? '#E23A54' : '#717A90', margin: '0 0 24px', fontWeight: err ? 700 : 500 }}>
-          {err ? 'Incorrect passcode — try again' : 'Enter your passcode'}
+          {err ? 'Incorrect passcode - try again' : 'Enter your passcode'}
         </p>
 
         {/* dots */}

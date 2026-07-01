@@ -50,7 +50,7 @@ export function NotifSheet() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 2px 16px' }}>
         <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 22 }}>Notifications</div>
-        <button onClick={() => run(api.markAllRead(), 'All caught up ✓')} style={{ border: 'none', background: 'none', color: '#3B5BFF', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Mark all read</button>
+        <button onClick={() => run(api.markAllRead(), 'All caught up')} style={{ border: 'none', background: 'none', color: '#3B5BFF', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Mark all read</button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {state.notifications.length === 0 && <div style={{ color: '#717A90', fontSize: 13.5, padding: '8px 2px' }}>No notifications yet.</div>}
@@ -80,15 +80,15 @@ export function FormSheet({ form, fd, setFd, nav }: { form: FormType; fd: FormDa
   const submit = async () => {
     if (form === 'event') {
       if (!fd.title?.trim()) return flash('Add a title first');
-      await run(api.addEvent({ title: fd.title, date: fd.date, time: fd.time, who: fd.who }), 'Event added ✓');
+      await run(api.addEvent({ title: fd.title, date: fd.date, time: fd.time, who: fd.who }), 'Event added');
       nav.goTab('calendar');
     } else if (form === 'bill') {
       if (!fd.name?.trim()) return flash('Add a bill name');
-      await run(api.addBill({ name: fd.name, amount: fd.amount, due: fd.due, payer: fd.payer }), 'Bill added ✓');
+      await run(api.addBill({ name: fd.name, amount: fd.amount, due: fd.due, payer: fd.payer }), 'Bill added');
       nav.goTab('money');
     } else {
       if (!fd.title?.trim()) return flash('Add a goal title');
-      await run(api.addGoal({ title: fd.title, kind: fd.kind, target: fd.target }), 'Goal added ✓');
+      await run(api.addGoal({ title: fd.title, kind: fd.kind, target: fd.target }), 'Goal added');
       nav.goTab('tasks');
       nav.goPlan('goals');
     }

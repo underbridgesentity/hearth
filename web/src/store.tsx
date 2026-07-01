@@ -52,7 +52,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const onExpired = () => {
       setUser(null);
       setState(null);
-      flash('Your session expired — please sign in again');
+      flash('Your session expired - please sign in again');
     };
     window.addEventListener('croft:unauthorized', onExpired);
     return () => window.removeEventListener('croft:unauthorized', onExpired);

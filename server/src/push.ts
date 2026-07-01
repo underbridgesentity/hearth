@@ -43,7 +43,7 @@ export async function pushToSub(sub: BrowserSub, payload: PushPayload) {
 export interface PushPayload { title: string; body?: string; url?: string }
 
 /** Deliver a push to every subscription in a household (optionally excluding one
- *  user — e.g. the person who triggered it). Dead subscriptions are pruned. */
+ * user - e.g. the person who triggered it). Dead subscriptions are pruned. */
 export async function pushToHousehold(householdId: string, payload: PushPayload, exceptUserId?: string) {
   if (!pushEnabled) return;
   const rows = (

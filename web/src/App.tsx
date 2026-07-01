@@ -9,9 +9,10 @@ import LegalPage from './screens/LegalPage';
 import LockScreen from './screens/LockScreen';
 import Landing from './screens/Landing';
 
-function readLegal(): 'privacy' | 'support' | null {
+function readLegal(): 'privacy' | 'terms' | 'support' | null {
   const p = window.location.pathname;
   if (p === '/privacy' || p === '/privacy/') return 'privacy';
+  if (p === '/terms' || p === '/terms/') return 'terms';
   if (p === '/support' || p === '/support/') return 'support';
   return null;
 }
@@ -47,14 +48,14 @@ export default function App() {
     const p = new URLSearchParams(window.location.search);
     const a = p.get('auth');
     if (a) {
-      if (a === 'google_ok') flash('Signed in with Google ✓');
+      if (a === 'google_ok') flash('Signed in with Google');
       else if (a === 'google_unconfigured') flash('Google sign-in isn’t set up yet');
       else if (a === 'google_error') flash('Google sign-in failed, try again');
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [flash]);
 
-  // Public legal pages — reachable without a session (App Store review, Google
+  // Public legal pages - reachable without a session (App Store review, Google
   // consent screen), independent of auth state.
   const legal = readLegal();
   if (legal) {

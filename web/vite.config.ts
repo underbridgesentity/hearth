@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'illustrations/*.jpg'],
       manifest: {
-        name: 'Croft — Family Hub',
+        name: 'Croft - Family Hub',
         short_name: 'Croft',
-        description: 'One calm home for your whole family — dates, reminders, lists, goals and money.',
+        description: 'One calm home for your whole family - dates, reminders, lists, goals and money.',
         theme_color: '#3B5BFF',
         background_color: '#F3F5FB',
         display: 'standalone',

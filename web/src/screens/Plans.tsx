@@ -13,7 +13,7 @@ export default function Plans({ nav }: { nav: Nav }) {
     <div>
       <div style={{ margin: '8px 2px 16px' }}>
         <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 30, letterSpacing: '-0.02em' }}>Plans</div>
-        <div style={{ marginTop: 4, color: '#717A90', fontSize: 14, fontWeight: 500 }}>To-dos, lists & goals — together</div>
+        <div style={{ marginTop: 4, color: '#717A90', fontSize: 14, fontWeight: 500 }}>To-dos, lists & goals - together</div>
       </div>
 
       <div style={{ display: 'flex', gap: 4, background: '#E9EDF6', borderRadius: 14, padding: 4, marginBottom: 22 }}>
@@ -48,7 +48,7 @@ function Todos() {
   const add = () => {
     const v = draft.trim();
     if (!v) return;
-    run(api.addTask({ title: v }), 'To-do added ✓');
+    run(api.addTask({ title: v }), 'To-do added');
     setDraft('');
   };
 
@@ -63,7 +63,7 @@ function Todos() {
         <div style={{ background: '#fff', borderRadius: 20, padding: '4px 14px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 18 }}>
           {open.map((t) => (
             <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 2px', borderBottom: '1px solid #F1F4FA' }}>
-              <button onClick={() => run(api.toggleTask(t.id, true), 'Nice — one less thing ✓')} role="checkbox" aria-checked={false} aria-label={`Mark "${t.title}" as done`} style={checkbox} />
+              <button onClick={() => run(api.toggleTask(t.id, true), 'Nice - one less thing')} role="checkbox" aria-checked={false} aria-label={`Mark "${t.title}" as done`} style={checkbox} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14.5, lineHeight: 1.25 }}>{t.title}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 5, flexWrap: 'wrap' }}>
@@ -71,7 +71,7 @@ function Todos() {
                   <span style={{ fontSize: 11.5, color: '#717A90' }}>From {t.from_name} · <b style={{ color: t.due_key === 'over' ? '#FF4D5E' : '#717A90', fontWeight: 700 }}>{t.due}</b></span>
                 </div>
               </div>
-              <button onClick={() => run(api.nudge(t.from_name), `Reminder sent to ${t.from_name} 🔔`)} title="Nudge" aria-label={`Nudge ${t.from_name}`} style={iconBtn}>
+              <button onClick={() => run(api.nudge(t.from_name), `Reminder sent to ${t.from_name}`)} title="Nudge" aria-label={`Nudge ${t.from_name}`} style={iconBtn}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 9.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 15.5 18 9.5" stroke="#3B5BFF" strokeWidth="1.8" strokeLinejoin="round" /><path d="M10.2 20.5a2 2 0 0 0 3.6 0" stroke="#3B5BFF" strokeWidth="1.8" strokeLinecap="round" /></svg>
               </button>
               <DeleteBtn onClick={() => run(api.delTask(t.id), 'Removed')} />
@@ -116,7 +116,7 @@ function Lists() {
   const add = () => {
     const v = draft.trim();
     if (!v) return;
-    run(api.addShop(v), 'Added to shopping list ✓');
+    run(api.addShop(v), 'Added to shopping list');
     setDraft('');
   };
 
@@ -135,11 +135,11 @@ function Lists() {
           <div style={{ width: 30, height: 30, borderRadius: 9, background: '#16C098', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0E7A5F' }}>Nice — everything's bought! 🎉</div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0E7A5F' }}>Nice - everything's bought!</div>
         </div>
       )}
       {state.shopping.length === 0 ? (
-        <Empty art="emptyList" title="Your list is empty" sub="Add what you need above — the family sees it instantly." />
+        <Empty art="emptyList" title="Your list is empty" sub="Add what you need above - the family sees it instantly." />
       ) : (
         <div style={{ background: '#fff', borderRadius: 20, padding: '4px 14px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)' }}>
           {state.shopping.map((x) => (
@@ -182,7 +182,7 @@ function Goals() {
               <div style={{ height: '100%', width: `${g.pct}%`, borderRadius: 100, background: g.color }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button onClick={() => run(api.bumpGoal(g.id), 'Progress logged 🎉')} style={{ border: 'none', background: '#F1F4FA', color: '#3B5BFF', fontWeight: 700, fontSize: 12.5, padding: '9px 15px', borderRadius: 100, cursor: 'pointer' }}>+ Log progress</button>
+              <button onClick={() => run(api.bumpGoal(g.id), 'Progress logged')} style={{ border: 'none', background: '#F1F4FA', color: '#3B5BFF', fontWeight: 700, fontSize: 12.5, padding: '9px 15px', borderRadius: 100, cursor: 'pointer' }}>+ Log progress</button>
               <button onClick={() => run(api.delGoal(g.id), 'Goal removed')} style={{ border: 'none', background: 'none', color: '#9AA3B5', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', marginLeft: 'auto' }}>Remove</button>
             </div>
           </div>
@@ -199,7 +199,7 @@ function Goals() {
               <div style={{ fontWeight: 700, fontSize: 15 }}>{g.title}</div>
               <div style={{ fontSize: 12, color: '#717A90' }}>{g.sub}</div>
             </div>
-            <button onClick={() => run(api.bumpGoal(g.id), 'Progress logged 🎉')} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 11, border: 'none', background: '#F1F4FA', cursor: 'pointer', fontSize: 20, color: '#3B5BFF', lineHeight: 1 }}>+</button>
+            <button onClick={() => run(api.bumpGoal(g.id), 'Progress logged')} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 11, border: 'none', background: '#F1F4FA', cursor: 'pointer', fontSize: 20, color: '#3B5BFF', lineHeight: 1 }}>+</button>
           </div>
         ))}
       </div>

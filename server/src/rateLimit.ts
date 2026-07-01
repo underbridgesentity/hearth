@@ -14,7 +14,7 @@ function clientIp(req: Request): string {
  * limit holds across all serverless instances. Keyed by `${prefix}:<ip>`.
  *
  * The upsert is atomic: it increments within the current window, or resets the
- * window if it has elapsed — in a single statement, so concurrent requests can't
+ * window if it has elapsed - in a single statement, so concurrent requests can't
  * race past the limit.
  */
 export function rateLimit(prefix: string, max: number, windowSec: number) {
@@ -27,7 +27,7 @@ export function rateLimit(prefix: string, max: number, windowSec: number) {
         `INSERT INTO rate_limits (bucket, count, reset_at)
            VALUES ($1, 1, now() + ($2 || ' seconds')::interval)
          ON CONFLICT (bucket) DO UPDATE SET
-           count    = CASE WHEN rate_limits.reset_at < now() THEN 1
+           count = CASE WHEN rate_limits.reset_at < now() THEN 1
                            ELSE rate_limits.count + 1 END,
            reset_at = CASE WHEN rate_limits.reset_at < now()
                            THEN now() + ($2 || ' seconds')::interval

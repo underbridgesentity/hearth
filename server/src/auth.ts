@@ -69,7 +69,7 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
 }
 
 /** Create a household + members + starter data and link it to the user, using an
- *  existing transaction client so callers can compose it atomically. */
+ * existing transaction client so callers can compose it atomically. */
 async function provisionHousehold(
   c: PoolClient,
   userId: string,
@@ -120,8 +120,8 @@ async function loadValidInvite(token: string): Promise<Invite | null> {
 const MEMBER_PALETTE = ['#7A5CFF', '#16C098', '#FF6B5C', '#FFB020', '#3B5BFF', '#FF5C8A'];
 
 /** Link a user to an invited household inside a transaction: claim the targeted
- *  placeholder member (or create a fresh member), point the user at it, and mark
- *  the invite accepted. */
+ * placeholder member (or create a fresh member), point the user at it, and mark
+ * the invite accepted. */
 async function joinHousehold(c: PoolClient, invite: Invite, userId: string, userName: string) {
   let memberId: string | null = invite.member_id;
   if (memberId) {
@@ -288,7 +288,7 @@ authRouter.post('/invite/:token/accept', rateLimit('signup', 10, 3600), async (r
 // ---- Password reset (email) ----
 authRouter.post('/forgot', rateLimit('forgot', 10, 900), async (req, res) => {
   const email = String(req.body?.email || '').toLowerCase().trim();
-  // Always respond ok — never reveal whether an account exists.
+  // Always respond ok - never reveal whether an account exists.
   if (email) {
     const u = (await query(`SELECT id, name, password_hash FROM users WHERE email=$1`, [email])).rows[0];
     if (u && u.password_hash) {
@@ -364,7 +364,7 @@ const pinSchema = z.object({ pin: z.string().regex(/^\d{4,8}$/) });
 
 authRouter.post('/lock/set', requireAuth, async (req: AuthedRequest, res) => {
   const p = pinSchema.safeParse(req.body);
-  if (!p.success) return res.status(400).json({ error: 'Passcode must be 4–8 digits.' });
+  if (!p.success) return res.status(400).json({ error: 'Passcode must be 4-8 digits.' });
   const hash = await bcrypt.hash(p.data.pin, 10);
   await query(`UPDATE users SET lock_pin=$1 WHERE id=$2`, [hash, req.userId]);
   res.json({ ok: true });
@@ -447,7 +447,7 @@ authRouter.get('/google/callback', async (req, res) => {
   const savedState = req.cookies?.g_state;
   const codeVerifier = req.cookies?.g_verifier;
   const inviteToken = req.cookies?.g_invite as string | undefined;
-  // One-time cookies — clear regardless of outcome.
+  // One-time cookies - clear regardless of outcome.
   res.clearCookie('g_state', { path: '/api/auth' });
   res.clearCookie('g_verifier', { path: '/api/auth' });
   res.clearCookie('g_invite', { path: '/api/auth' });
@@ -479,7 +479,7 @@ authRouter.get('/google/callback', async (req, res) => {
     const email = String(prof.email || '').toLowerCase();
     const name = prof.name || email.split('@')[0];
     const googleId = String(prof.id || '');
-    // Only trust the email if Google says it is verified — otherwise an
+    // Only trust the email if Google says it is verified - otherwise an
     // attacker-controlled Google account with a victim's address could be
     // auto-linked to the victim's existing password account.
     const emailVerified = prof.verified_email === true || prof.email_verified === true;

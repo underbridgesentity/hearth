@@ -16,7 +16,7 @@ dataRouter.use(requireAuth);
 const num = (v: any) => (v == null ? 0 : Number(v));
 
 /** Assemble the whole app state for a household (raw rows; client formats).
- *  `meMemberId` marks which member is "you" for the requesting user. */
+ * `meMemberId` marks which member is "you" for the requesting user. */
 async function assembleState(householdId: string, meMemberId?: string) {
   const [
     hh, members, events, tasks, shopping, goals, bills, budget, savings, settle, notifications, feed,
@@ -68,7 +68,7 @@ async function assembleState(householdId: string, meMemberId?: string) {
   };
 }
 
-/** Return fresh state — every mutation ends with this. */
+/** Return fresh state - every mutation ends with this. */
 async function sendState(req: AuthedRequest, res: Response) {
   res.json(await assembleState(req.householdId!, req.memberId));
 }
@@ -283,10 +283,10 @@ dataRouter.post('/nudge', async (req: AuthedRequest, res) => {
   await query(
     `INSERT INTO notifications (household_id, illo, color, title, body, time_label, unread)
      VALUES ($1,'bell','#FF5C8A',$2,$3,'just now',true)`,
-    [hh(req), `Reminder for ${name}`, 'A nudge was sent — don’t forget!']
+    [hh(req), `Reminder for ${name}`, 'A nudge was sent - don’t forget!']
   );
   // Fire a real push to the rest of the household (best-effort; never blocks).
-  pushToHousehold(hh(req), { title: `Reminder for ${name}`, body: 'A nudge was sent — don’t forget!', url: '/' }, req.userId).catch(() => {});
+  pushToHousehold(hh(req), { title: `Reminder for ${name}`, body: 'A nudge was sent - don’t forget!', url: '/' }, req.userId).catch(() => {});
   await sendState(req, res);
 });
 
@@ -301,7 +301,7 @@ dataRouter.post('/push/subscribe', async (req: AuthedRequest, res) => {
   }
   await saveSubscription(hh(req), req.userId, sub);
   // Immediate confirmation so the user sees push working right away.
-  pushToSub(sub, { title: 'Croft notifications are on ✓', body: 'Reminders and nudges will appear here.', url: '/' }).catch(() => {});
+  pushToSub(sub, { title: 'Croft notifications are on', body: 'Reminders and nudges will appear here.', url: '/' }).catch(() => {});
   res.json({ ok: true });
 });
 dataRouter.post('/push/unsubscribe', async (req: AuthedRequest, res) => {
@@ -332,7 +332,7 @@ dataRouter.patch('/household', async (req: AuthedRequest, res) => {
   await sendState(req, res);
 });
 
-// Subscribable calendar (ICS) feed URL for this household — creates the token
+// Subscribable calendar (ICS) feed URL for this household - creates the token
 // on first use. Add it in Apple Calendar (webcal) or Google Calendar (from URL).
 dataRouter.get('/calendar-feed', async (req: AuthedRequest, res) => {
   const row = (await query(`SELECT calendar_token FROM households WHERE id=$1`, [hh(req)])).rows[0];

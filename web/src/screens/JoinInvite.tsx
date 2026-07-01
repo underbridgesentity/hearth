@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { api } from '../lib/api';
+import { EyeBtn } from './Onboarding';
 
 const grotesk = "'Space Grotesk', sans-serif";
 
@@ -27,6 +28,9 @@ export default function JoinInvite({ token, onJoined, onCancel }: { token: strin
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -46,6 +50,14 @@ export default function JoinInvite({ token, onJoined, onCancel }: { token: strin
     setErr(null);
     if (!name.trim() || !email.trim() || password.length < 8) {
       setErr('Enter your name, email and a password (8+ characters).');
+      return;
+    }
+    if (email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
+      setErr('The email addresses do not match.');
+      return;
+    }
+    if (password !== confirmPw) {
+      setErr('The passwords do not match.');
       return;
     }
     setBusy(true);
@@ -90,11 +102,22 @@ export default function JoinInvite({ token, onJoined, onCancel }: { token: strin
             </div>
             <div style={{ marginBottom: 14 }}>
               <div style={labelStyle}>Email</div>
-              <input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
+              <input style={inputStyle} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={labelStyle}>Confirm email</div>
+              <input style={inputStyle} type="email" autoComplete="off" value={confirmEmail} onChange={(e) => setConfirmEmail(e.target.value)} onPaste={(e) => e.preventDefault()} placeholder="Re-enter your email" />
             </div>
             <div style={{ marginBottom: 14 }}>
               <div style={labelStyle}>Password</div>
-              <input style={inputStyle} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+              <div style={{ position: 'relative' }}>
+                <input style={{ ...inputStyle, paddingRight: 46 }} type={showPw ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+                <EyeBtn shown={showPw} onClick={() => setShowPw((v) => !v)} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={labelStyle}>Confirm password</div>
+              <input style={inputStyle} type={showPw ? 'text' : 'password'} autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} onPaste={(e) => e.preventDefault()} placeholder="Re-enter your password" />
             </div>
             {err && <div style={{ color: '#E23A54', fontSize: 13.5, fontWeight: 600, margin: '0 2px 14px' }}>{err}</div>}
             <button style={{ ...primaryBtn, opacity: busy ? 0.7 : 1 }} disabled={busy} onClick={join}>

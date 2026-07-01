@@ -2,7 +2,7 @@ import type { PoolClient } from 'pg';
 
 /**
  * Set up a brand-new household: create the signing-up user as the "You" member
- * and apply clean default settings. New households start EMPTY — every screen
+ * and apply clean default settings. New households start EMPTY - every screen
  * has a first-run empty state, and real content is added by the user (and the
  * family they invite), not pre-populated with sample data.
  */
@@ -26,7 +26,7 @@ export async function seedHousehold(
     JSON.stringify({
       push: true,
       email: true,
-      // Integrations below aren't wired yet — default them off so the toggles
+      // Integrations below aren't wired yet - default them off so the toggles
       // reflect reality.
       appleCal: false,
       googleCal: false,

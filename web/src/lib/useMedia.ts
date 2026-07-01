@@ -14,5 +14,5 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-/** Desktop/tablet-landscape breakpoint — switches to the sidebar layout. */
+/** Desktop/tablet-landscape breakpoint - switches to the sidebar layout. */
 export const useIsDesktop = () => useMediaQuery('(min-width: 900px)');

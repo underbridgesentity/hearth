@@ -32,9 +32,9 @@ const primaryBtn: React.CSSProperties = {
 const grotesk = "'Space Grotesk', sans-serif";
 
 const INTRO = [
-  { art: 'organize', title: 'Everything in one place', body: 'Dates, to-dos, lists, goals and bills — together, instead of scattered across chats.' },
+  { art: 'organize', title: 'Everything in one place', body: 'Dates, to-dos, lists, goals and bills - together, instead of scattered across chats.' },
   { art: 'remember', title: 'Never drop the ball', body: 'Gentle reminders and push notifications, so nothing slips through the cracks.' },
-  { art: 'money', title: 'Money, handled together', body: "See what's paid, what's still due, and who owes who — all at a glance." },
+  { art: 'money', title: 'Money, handled together', body: "See what's paid, what's still due, and who owes who - all at a glance." },
 ];
 
 export default function Onboarding({ onComplete, initialStep = 'welcome' }: { onComplete: () => void; initialStep?: Step }) {
@@ -48,6 +48,9 @@ export default function Onboarding({ onComplete, initialStep = 'welcome' }: { on
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [householdName, setHouseholdName] = useState('');
   const [forgotSent, setForgotSent] = useState(false);
 
@@ -72,6 +75,14 @@ export default function Onboarding({ onComplete, initialStep = 'welcome' }: { on
     setErr('');
     if (!name.trim() || !email.trim() || password.length < 8) {
       setErr('Fill in your name, email and a password (8+ characters).');
+      return;
+    }
+    if (email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
+      setErr('The email addresses do not match.');
+      return;
+    }
+    if (password !== confirmPw) {
+      setErr('The passwords do not match.');
       return;
     }
     setBusy(true);
@@ -109,7 +120,7 @@ export default function Onboarding({ onComplete, initialStep = 'welcome' }: { on
       const ok = await enablePush();
       if (ok) {
         await run(api.setSetting('push', true));
-        flash('Notifications turned on 🔔');
+        flash('Notifications turned on');
       } else {
         flash('You can turn on notifications later in Family');
       }
@@ -132,7 +143,7 @@ export default function Onboarding({ onComplete, initialStep = 'welcome' }: { on
             One calm home for<br />your whole family.
           </h1>
           <p style={{ fontSize: 15, lineHeight: 1.5, color: '#717A90', margin: '0 8px 28px' }}>
-            Dates, reminders, lists, goals and money — all in one warm place, off your group chats.
+            Dates, reminders, lists, goals and money - all in one warm place, off your group chats.
           </p>
           <button style={primaryBtn} onClick={() => setStep('intro')}>Get started</button>
           <button onClick={() => setStep('login')} style={ghostBtn}>I already have an account</button>
@@ -176,12 +187,22 @@ export default function Onboarding({ onComplete, initialStep = 'welcome' }: { on
           <h1 style={titleStyle}>Create your account</h1>
           <p style={subStyle}>Start running your home in one place.</p>
           <Field label="Full name"><input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Sipho Mokoena" /></Field>
-          <Field label="Email"><input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></Field>
-          <Field label="Password"><input style={inputStyle} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" /></Field>
+          <Field label="Email"><input style={inputStyle} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></Field>
+          <Field label="Confirm email"><input style={inputStyle} type="email" autoComplete="off" value={confirmEmail} onChange={(e) => setConfirmEmail(e.target.value)} onPaste={(e) => e.preventDefault()} placeholder="Re-enter your email" /></Field>
+          <Field label="Password">
+            <div style={{ position: 'relative' }}>
+              <input style={{ ...inputStyle, paddingRight: 46 }} type={showPw ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+              <EyeBtn shown={showPw} onClick={() => setShowPw((v) => !v)} />
+            </div>
+          </Field>
+          <Field label="Confirm password"><input style={inputStyle} type={showPw ? 'text' : 'password'} autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} onPaste={(e) => e.preventDefault()} placeholder="Re-enter your password" /></Field>
           {err && <ErrLine msg={err} />}
-          <button style={{ ...primaryBtn, marginTop: 10, marginBottom: 18, opacity: busy ? 0.7 : 1 }} disabled={busy} onClick={doSignup}>
+          <button style={{ ...primaryBtn, marginTop: 10, marginBottom: 12, opacity: busy ? 0.7 : 1 }} disabled={busy} onClick={doSignup}>
             {busy ? 'Creating…' : 'Create account'}
           </button>
+          <div style={{ fontSize: 12, color: '#9AA3B5', textAlign: 'center', marginBottom: 16, lineHeight: 1.5 }}>
+            By creating an account, you agree to our <a href="/terms" style={{ color: '#717A90', fontWeight: 700 }}>Terms</a> and <a href="/privacy" style={{ color: '#717A90', fontWeight: 700 }}>Privacy Policy</a>.
+          </div>
           <Divider />
           <button onClick={() => (window.location.href = api.googleUrl())} style={oauthBtn}>
             <GoogleMark />Continue with Google
@@ -334,6 +355,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <div style={labelStyle}>{label}</div>
       {children}
     </div>
+  );
+}
+export function EyeBtn({ shown, onClick }: { shown: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={shown ? 'Hide password' : 'Show password'} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', padding: 9, color: '#8A93A6', display: 'flex' }}>
+      {shown ? (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A9.6 9.6 0 0 1 12 5c6 0 9 7 9 7a13.5 13.5 0 0 1-2.2 3.2M6.1 6.1A13.3 13.3 0 0 0 3 12s3 7 9 7a9.3 9.3 0 0 0 3.9-.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      ) : (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" /></svg>
+      )}
+    </button>
   );
 }
 function Divider() {

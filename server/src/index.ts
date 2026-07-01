@@ -6,7 +6,7 @@ import { initSchema } from './db.js';
 import app, { googleConfigured } from './app.js';
 
 // Local development + traditional (single-service) hosting entry point.
-// On Vercel this file is NOT used — the app is served via api/ + static CDN.
+// On Vercel this file is NOT used - the app is served via api/ + static CDN.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3001);
 const isProd = process.env.NODE_ENV === 'production';

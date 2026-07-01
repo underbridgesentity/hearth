@@ -57,30 +57,30 @@ const SCHEMA = `
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Shared (cross-instance) fixed-window rate-limit counters. In-memory limiting
--- is useless on serverless — each warm instance has its own memory — so the
+-- is useless on serverless - each warm instance has its own memory - so the
 -- store lives in Postgres.
 CREATE TABLE IF NOT EXISTS rate_limits (
-  bucket   TEXT PRIMARY KEY,
-  count    INT NOT NULL,
+  bucket TEXT PRIMARY KEY,
+  count INT NOT NULL,
   reset_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS households (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        TEXT NOT NULL DEFAULT 'My Home',
-  settings    JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL DEFAULT 'My Home',
+  settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS users (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email         TEXT UNIQUE NOT NULL,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
   password_hash TEXT,
-  name          TEXT NOT NULL,
-  google_id     TEXT UNIQUE,
-  household_id  UUID REFERENCES households(id) ON DELETE SET NULL,
-  member_id     UUID,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  name TEXT NOT NULL,
+  google_id TEXT UNIQUE,
+  household_id UUID REFERENCES households(id) ON DELETE SET NULL,
+  member_id UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Whether the user has seen the first-run welcome walkthrough (per-user).
@@ -92,163 +92,163 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS lock_pin TEXT;
 -- Real dates (source of truth for reminders); display labels are derived from these.
 ALTER TABLE events ADD COLUMN IF NOT EXISTS event_date DATE;
 ALTER TABLE events ADD COLUMN IF NOT EXISTS event_time TEXT;
-ALTER TABLE bills  ADD COLUMN IF NOT EXISTS due_date DATE;
+ALTER TABLE bills ADD COLUMN IF NOT EXISTS due_date DATE;
 
 -- Unguessable token for the household's subscribable calendar (ICS) feed.
 ALTER TABLE households ADD COLUMN IF NOT EXISTS calendar_token TEXT UNIQUE;
 
 CREATE TABLE IF NOT EXISTS password_resets (
-  token      TEXT PRIMARY KEY,
-  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   expires_at TIMESTAMPTZ NOT NULL,
-  used       BOOLEAN NOT NULL DEFAULT false,
+  used BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS push_subscriptions (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  user_id      UUID REFERENCES users(id) ON DELETE CASCADE,
-  endpoint     TEXT UNIQUE NOT NULL,
-  p256dh       TEXT NOT NULL,
-  auth         TEXT NOT NULL,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT UNIQUE NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS members (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  role         TEXT NOT NULL DEFAULT '',
-  initial      TEXT NOT NULL DEFAULT '?',
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  is_you       BOOLEAN NOT NULL DEFAULT false,
-  user_id      UUID,
-  sort         INT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT '',
+  initial TEXT NOT NULL DEFAULT '?',
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  is_you BOOLEAN NOT NULL DEFAULT false,
+  user_id UUID,
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS events (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  title        TEXT NOT NULL,
-  time         TEXT NOT NULL DEFAULT '',
-  ampm         TEXT NOT NULL DEFAULT '',
-  day          TEXT NOT NULL DEFAULT '',
-  date_label   TEXT NOT NULL DEFAULT '',
-  loc          TEXT NOT NULL DEFAULT '',
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  illo         TEXT NOT NULL DEFAULT 'calendar',
-  sort         INT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  title TEXT NOT NULL,
+  time TEXT NOT NULL DEFAULT '',
+  ampm TEXT NOT NULL DEFAULT '',
+  day TEXT NOT NULL DEFAULT '',
+  date_label TEXT NOT NULL DEFAULT '',
+  loc TEXT NOT NULL DEFAULT '',
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  illo TEXT NOT NULL DEFAULT 'calendar',
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  title        TEXT NOT NULL,
-  from_name    TEXT NOT NULL DEFAULT 'You',
-  from_color   TEXT NOT NULL DEFAULT '#3B5BFF',
-  due          TEXT NOT NULL DEFAULT 'Today',
-  due_key      TEXT NOT NULL DEFAULT 'today',
-  done         BOOLEAN NOT NULL DEFAULT false,
-  type         TEXT NOT NULL DEFAULT 'Task',
-  sort         INT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  title TEXT NOT NULL,
+  from_name TEXT NOT NULL DEFAULT 'You',
+  from_color TEXT NOT NULL DEFAULT '#3B5BFF',
+  due TEXT NOT NULL DEFAULT 'Today',
+  due_key TEXT NOT NULL DEFAULT 'today',
+  done BOOLEAN NOT NULL DEFAULT false,
+  type TEXT NOT NULL DEFAULT 'Task',
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS shopping (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  by_member    TEXT NOT NULL DEFAULT 'you',
-  got          BOOLEAN NOT NULL DEFAULT false,
-  sort         INT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  name TEXT NOT NULL,
+  by_member TEXT NOT NULL DEFAULT 'you',
+  got BOOLEAN NOT NULL DEFAULT false,
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS goals (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  kind         TEXT NOT NULL DEFAULT 'Family',
-  tag          TEXT NOT NULL DEFAULT 'Goal',
-  title        TEXT NOT NULL,
-  sub          TEXT NOT NULL DEFAULT '',
-  pct          INT NOT NULL DEFAULT 0,
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  target       NUMERIC NOT NULL DEFAULT 0,
-  sort         INT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  kind TEXT NOT NULL DEFAULT 'Family',
+  tag TEXT NOT NULL DEFAULT 'Goal',
+  title TEXT NOT NULL,
+  sub TEXT NOT NULL DEFAULT '',
+  pct INT NOT NULL DEFAULT 0,
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  target NUMERIC NOT NULL DEFAULT 0,
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS bills (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  cat          TEXT NOT NULL DEFAULT 'Other',
-  amount       NUMERIC NOT NULL DEFAULT 0,
-  due          TEXT NOT NULL DEFAULT '',
-  status       TEXT NOT NULL DEFAULT 'unpaid',
-  payer        TEXT NOT NULL DEFAULT 'Shared',
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  illo         TEXT NOT NULL DEFAULT 'wallet',
-  sort         INT NOT NULL DEFAULT 0,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  name TEXT NOT NULL,
+  cat TEXT NOT NULL DEFAULT 'Other',
+  amount NUMERIC NOT NULL DEFAULT 0,
+  due TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'unpaid',
+  payer TEXT NOT NULL DEFAULT 'Shared',
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  illo TEXT NOT NULL DEFAULT 'wallet',
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS budget (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  spent        NUMERIC NOT NULL DEFAULT 0,
+  name TEXT NOT NULL,
+  spent NUMERIC NOT NULL DEFAULT 0,
   budget_limit NUMERIC NOT NULL DEFAULT 0,
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  sort         INT NOT NULL DEFAULT 0
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  sort INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS savings (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  saved        NUMERIC NOT NULL DEFAULT 0,
-  target       NUMERIC NOT NULL DEFAULT 0,
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  sort         INT NOT NULL DEFAULT 0
+  name TEXT NOT NULL,
+  saved NUMERIC NOT NULL DEFAULT 0,
+  target NUMERIC NOT NULL DEFAULT 0,
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  sort INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS settle (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  txt          TEXT NOT NULL,
-  detail       TEXT NOT NULL DEFAULT '',
-  amount       TEXT NOT NULL DEFAULT '',
-  dir          TEXT NOT NULL DEFAULT 'out',
-  who          TEXT NOT NULL DEFAULT '',
-  settled      BOOLEAN NOT NULL DEFAULT false,
-  sort         INT NOT NULL DEFAULT 0
+  txt TEXT NOT NULL,
+  detail TEXT NOT NULL DEFAULT '',
+  amount TEXT NOT NULL DEFAULT '',
+  dir TEXT NOT NULL DEFAULT 'out',
+  who TEXT NOT NULL DEFAULT '',
+  settled BOOLEAN NOT NULL DEFAULT false,
+  sort INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  illo         TEXT NOT NULL DEFAULT 'bell',
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  title        TEXT NOT NULL,
-  body         TEXT NOT NULL DEFAULT '',
-  time_label   TEXT NOT NULL DEFAULT 'Just now',
-  unread       BOOLEAN NOT NULL DEFAULT true,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  illo TEXT NOT NULL DEFAULT 'bell',
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  title TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  time_label TEXT NOT NULL DEFAULT 'Just now',
+  unread BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS feed (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  who          TEXT NOT NULL,
-  color        TEXT NOT NULL DEFAULT '#3B5BFF',
-  initial      TEXT NOT NULL DEFAULT '?',
-  txt          TEXT NOT NULL,
-  time_label   TEXT NOT NULL DEFAULT 'Just now',
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  who TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT '#3B5BFF',
+  initial TEXT NOT NULL DEFAULT '?',
+  txt TEXT NOT NULL,
+  time_label TEXT NOT NULL DEFAULT 'Just now',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_members_hh ON members(household_id);
@@ -258,16 +258,16 @@ CREATE INDEX IF NOT EXISTS idx_shopping_hh ON shopping(household_id);
 CREATE INDEX IF NOT EXISTS idx_goals_hh ON goals(household_id);
 CREATE INDEX IF NOT EXISTS idx_bills_hh ON bills(household_id);
 CREATE TABLE IF NOT EXISTS invites (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  token        TEXT UNIQUE NOT NULL,
-  member_id    UUID,          -- optional: an existing placeholder member to claim
-  role         TEXT NOT NULL DEFAULT '',
-  created_by   UUID,
-  expires_at   TIMESTAMPTZ NOT NULL,
-  accepted_at  TIMESTAMPTZ,
-  accepted_by  UUID,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  token TEXT UNIQUE NOT NULL,
+  member_id UUID, -- optional: an existing placeholder member to claim
+  role TEXT NOT NULL DEFAULT '',
+  created_by UUID,
+  expires_at TIMESTAMPTZ NOT NULL,
+  accepted_at TIMESTAMPTZ,
+  accepted_by UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_hh ON notifications(household_id);

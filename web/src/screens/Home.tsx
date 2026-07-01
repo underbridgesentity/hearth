@@ -49,7 +49,7 @@ export default function Home({ nav }: { nav: Nav }) {
       {/* Today */}
       <Row title="Today" action="Calendar →" onAction={() => nav.goTab('calendar')} />
       <div style={{ background: '#fff', borderRadius: 22, padding: '6px 14px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 26 }}>
-        {todayList.length === 0 && <div style={{ padding: '18px 2px', color: '#717A90', fontSize: 13.5 }}>Nothing scheduled today — enjoy the calm.</div>}
+        {todayList.length === 0 && <div style={{ padding: '18px 2px', color: '#717A90', fontSize: 13.5 }}>Nothing scheduled today - enjoy the calm.</div>}
         {todayList.map((it) => (
           <div key={it.key} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 2px', borderBottom: '1px solid #F1F4FA' }}>
             <Icon name={it.illo} color={it.color} size={42} radius={13} glyph={22} />
@@ -58,7 +58,7 @@ export default function Home({ nav }: { nav: Nav }) {
               <div style={{ fontSize: 12, color: '#717A90', marginTop: 2 }}>{it.meta}</div>
             </div>
             {it.tappable ? (
-              <button onClick={() => run(api.toggleTask((it as any).id, true), 'Nice — one less thing ✓')} style={circleBtn} />
+              <button onClick={() => run(api.toggleTask((it as any).id, true), 'Nice - one less thing')} style={circleBtn} />
             ) : (
               <div style={{ flexShrink: 0, fontFamily: grotesk, fontWeight: 600, fontSize: 13, textAlign: 'right' }}>{it.time}</div>
             )}

@@ -11,7 +11,7 @@ import { calendarRouter } from './calendar.js';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 const isProd = process.env.NODE_ENV === 'production';
 
-// Express 4 does NOT forward errors thrown from async route handlers — a rejected
+// Express 4 does NOT forward errors thrown from async route handlers - a rejected
 // promise leaves the request hanging and can crash the process / fail the
 // serverless invocation. Wrap every handler on a router so a rejection is routed
 // to the terminal error middleware below instead.
@@ -47,7 +47,7 @@ app.use('/api/cron', cronRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api', dataRouter);
 
-// Terminal error handler — keeps the API returning clean JSON on any failure
+// Terminal error handler - keeps the API returning clean JSON on any failure
 // (e.g. a transient Neon error) instead of hanging the request.
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   if (err && err.code === '23505') {

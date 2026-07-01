@@ -40,7 +40,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
     setPwBusy(true);
     try {
       await api.changePassword({ currentPassword: curPw || undefined, newPassword: newPw });
-      flash('Password updated ✓');
+      flash('Password updated');
       setPwOpen(false);
       setCurPw('');
       setNewPw('');
@@ -64,19 +64,19 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
     if (!cal) return;
     try {
       await navigator.clipboard.writeText(cal.url);
-      flash('Calendar link copied ✓');
+      flash('Calendar link copied');
     } catch {
-      flash('Could not copy — long-press to copy');
+      flash('Could not copy - long-press to copy');
     }
   };
   const enableLock = async () => {
-    if (!/^\d{4,8}$/.test(pinA)) return flash('Passcode must be 4–8 digits');
+    if (!/^\d{4,8}$/.test(pinA)) return flash('Passcode must be 4-8 digits');
     if (pinA !== pinB) return flash('Passcodes don’t match');
     setLockBusy(true);
     try {
       await api.lockSet(pinA);
       setLockEnabled(true);
-      flash('App lock turned on ✓');
+      flash('App lock turned on');
       setLockOpen(false); setPinA(''); setPinB('');
     } catch (e: any) {
       flash(e?.message || 'Could not set passcode');
@@ -112,7 +112,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
   const invite = () => {
     const v = inviteName.trim();
     if (!v) return;
-    run(api.addMember({ name: v }), `${v} added to the family ✓`);
+    run(api.addMember({ name: v }), `${v} added to the family`);
     setInviteName('');
     setInviting(false);
   };
@@ -137,9 +137,9 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
     if (!inviteLink) return;
     try {
       await navigator.clipboard.writeText(inviteLink);
-      flash('Invite link copied ✓');
+      flash('Invite link copied');
     } catch {
-      flash('Could not copy — long-press to copy');
+      flash('Could not copy - long-press to copy');
     }
   };
   const sendEmailInvite = async () => {
@@ -148,7 +148,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
     setEmailBusy(true);
     try {
       const { emailed } = await api.createInvite({ email: addr });
-      flash(emailed ? `Invite emailed to ${addr} ✓` : 'Created — email didn’t send, share a link instead');
+      flash(emailed ? `Invite emailed to ${addr}` : 'Created - email didn’t send, share a link instead');
       setInviteAddr('');
     } catch (e: any) {
       flash(e?.message || 'Could not send invite');
@@ -164,7 +164,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
     if (!s.push) {
       const ok = await enablePush();
       if (!ok) return flash('Allow notifications in your browser/device settings');
-      run(api.setSetting('push', true), 'Push notifications on ✓');
+      run(api.setSetting('push', true), 'Push notifications on');
     } else {
       await disablePush();
       run(api.setSetting('push', false), 'Push notifications off');
@@ -239,7 +239,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
       <div style={{ fontSize: 12.5, color: '#717A90', margin: '0 2px 12px' }}>How Croft reaches you and the family</div>
       <div style={{ background: '#fff', borderRadius: 22, padding: '4px 16px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 26 }}>
         {notifRows.map((r) => (
-          <SettingRow key={r.key} illo={r.illo} iconColor={(r as any).iconColor} label={r.label} detail={r.detail} good={r.good} onClick={() => (r.key === 'push' ? togglePush() : toggle(r.key, 'Updated ✓'))} />
+          <SettingRow key={r.key} illo={r.illo} iconColor={(r as any).iconColor} label={r.label} detail={r.detail} good={r.good} onClick={() => (r.key === 'push' ? togglePush() : toggle(r.key, 'Updated'))} />
         ))}
         <div style={{ height: 4 }} />
       </div>
@@ -250,7 +250,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
       <div style={{ background: '#fff', borderRadius: 22, padding: 16, boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 26 }}>
         {cal ? (
           <>
-            <div style={{ fontSize: 13, color: '#717A90', lineHeight: 1.5, marginBottom: 12 }}>Subscribe once and your family’s events stay in sync in your calendar app — new events appear automatically.</div>
+            <div style={{ fontSize: 13, color: '#717A90', lineHeight: 1.5, marginBottom: 12 }}>Subscribe once and your family’s events stay in sync in your calendar app - new events appear automatically.</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <a href={cal.webcal} style={{ flex: 1, minWidth: 150, textAlign: 'center', textDecoration: 'none', background: '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '11px', borderRadius: 12 }}>Add to Apple Calendar</a>
               <button onClick={copyCal} style={{ flex: 1, minWidth: 150, border: '1.5px solid #E4E9F2', background: '#fff', color: '#101426', fontWeight: 700, fontSize: 13.5, padding: '11px', borderRadius: 12, cursor: 'pointer' }}>Copy link for Google</button>
@@ -268,7 +268,7 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
       <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 19, margin: '0 2px 12px' }}>Account & security</div>
       <div style={{ background: '#fff', borderRadius: 22, padding: '4px 16px', boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 12 }}>
         <SettingRow illo="lock" label="Change password" detail="" onClick={() => setPwOpen((v) => !v)} />
-        <SettingRow illo="cloud" label="Auto-backup & sync" detail="On" good onClick={() => flash('Your data backs up and syncs automatically ✓')} />
+        <SettingRow illo="cloud" label="Auto-backup & sync" detail="On" good onClick={() => flash('Your data backs up and syncs automatically')} />
         <SettingRow illo="lock" label="App lock (passcode)" detail={locked ? 'On' : 'Off'} good={locked} onClick={() => { setLockOpen((v) => !v); setPinA(''); setPinB(''); }} />
         <div style={{ height: 4 }} />
       </div>
@@ -277,9 +277,9 @@ export default function Family({ nav: _nav, onSignOut }: { nav: Nav; onSignOut: 
         <div style={{ background: '#fff', borderRadius: 18, padding: 16, boxShadow: '0 2px 10px rgba(16,20,38,0.04)', marginBottom: 12 }}>
           <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 4 }}>{locked ? 'Turn off app lock' : 'Set a passcode'}</div>
           <div style={{ fontSize: 12.5, color: '#717A90', marginBottom: 12, lineHeight: 1.45 }}>
-            {locked ? 'Enter your current passcode to turn off the lock.' : 'A 4–8 digit code you’ll enter each time you open Croft. Forgot it? Sign out and back in to reset.'}
+            {locked ? 'Enter your current passcode to turn off the lock.' : 'A 4-8 digit code you’ll enter each time you open Croft. Forgot it? Sign out and back in to reset.'}
           </div>
-          <input inputMode="numeric" type="password" maxLength={8} value={pinA} onChange={(e) => setPinA(e.target.value.replace(/\D/g, ''))} placeholder={locked ? 'Passcode' : 'New passcode (4–8 digits)'} style={pwInput} />
+          <input inputMode="numeric" type="password" maxLength={8} value={pinA} onChange={(e) => setPinA(e.target.value.replace(/\D/g, ''))} placeholder={locked ? 'Passcode' : 'New passcode (4-8 digits)'} style={pwInput} />
           {!locked && <input inputMode="numeric" type="password" maxLength={8} value={pinB} onChange={(e) => setPinB(e.target.value.replace(/\D/g, ''))} placeholder="Confirm passcode" style={{ ...pwInput, marginTop: 8 }} />}
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button onClick={locked ? disableLock : enableLock} disabled={lockBusy} style={{ flex: 1, border: 'none', background: locked ? '#E23A54' : '#3B5BFF', color: '#fff', fontWeight: 700, fontSize: 14, padding: 11, borderRadius: 12, cursor: 'pointer', opacity: lockBusy ? 0.6 : 1 }}>{lockBusy ? '…' : locked ? 'Turn off' : 'Turn on lock'}</button>
